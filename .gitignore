@@ -43,3 +43,5 @@ doxygen/
 .qmake.stash
 .DS_Store
 .directory
+tags
+compile_commands.json
