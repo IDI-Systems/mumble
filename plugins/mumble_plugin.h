@@ -3,8 +3,8 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#ifndef MUMBLE_MUMBLE_PLUGIN_H_
-#define MUMBLE_MUMBLE_PLUGIN_H_
+#ifndef MUMBLE_PA_PLUGIN_H_
+#define MUMBLE_PA_PLUGIN_H_
 
 #include <stdint.h>
 
