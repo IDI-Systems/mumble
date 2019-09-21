@@ -11,6 +11,11 @@ CONFIG *= ordered debug_and_release
 SUBDIRS *= src/mumble_proto
 
 !CONFIG(no-client) {
+  !CONFIG(no-plugin-installer) {
+	SUBDIRS *= 3rdparty/zlib-build
+	SUBDIRS *= 3rdparty/quazip-build
+  }
+
   unix:!CONFIG(bundled-speex):system($$PKG_CONFIG --atleast-version=1.2 speexdsp):system($$PKG_CONFIG --atleast-version=1.2 speex) {
     CONFIG *= no-bundled-speex
   }

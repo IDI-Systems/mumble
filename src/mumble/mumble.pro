@@ -11,6 +11,8 @@ DEFINES *= MUMBLE
 TEMPLATE = app
 TARGET = mumble
 
+QT += concurrent
+
 !CONFIG(qt4-legacy-compat) {
   CONFIG += no-qt4-legacy-compat
 }
@@ -61,7 +63,12 @@ CONFIG(static) {
   CONFIG += static_qt_plugins
 }
 
+CONFIG(plugin-debug) {
+    DEFINES *= MUMBLE_PLUGIN_DEBUG
+}
+
 QT  *= network sql xml svg concurrent
+
 isEqual(QT_MAJOR_VERSION, 5) {
   QT *= widgets
 
@@ -100,7 +107,13 @@ HEADERS *= BanEditor.h \
     UserModel.h \
     Audio.h \
     ConfigDialog.h \
-    Plugins.h \
+    PluginConfig.h \
+    Plugin.h \
+    LegacyPlugin.h \
+    PluginManager.h \
+    PluginUpdater.h \
+    PositionalData.h \
+    API.h \
     PTTButtonWidget.h \
     LookConfig.h \
     SharedMemory.h \
@@ -135,7 +148,8 @@ HEADERS *= BanEditor.h \
     Screen.h \
     SvgIcon.h \
     Markdown.h \
-    TalkingUI.h
+    TalkingUI.h \
+    ../ProcessResolver.h
 
 SOURCES *= BanEditor.cpp \
     ACLEditor.cpp \
@@ -162,7 +176,13 @@ SOURCES *= BanEditor.cpp \
     UserModel.cpp \
     Audio.cpp \
     ConfigDialog.cpp \
-    Plugins.cpp \
+    PluginConfig.cpp \
+    Plugin.cpp \
+    LegacyPlugin.cpp \
+    PluginManager.cpp \
+    PluginUpdater.cpp \
+    PositionalData.cpp \
+    API.cpp \
     PTTButtonWidget.cpp \
     LookConfig.cpp \
     SharedMemory.cpp \
@@ -198,7 +218,8 @@ SOURCES *= BanEditor.cpp \
     Screen.cpp \
     SvgIcon.cpp \
     Markdown.cpp \
-    TalkingUI.cpp
+    TalkingUI.cpp \
+    ../ProcessResolver.cpp
 
 !CONFIG(no-overlay) {
 	DEFINES *= USE_OVERLAY
@@ -249,7 +270,7 @@ FORMS *= ConfigDialog.ui \
     ConnectDialogEdit.ui \
     BanEditor.ui \
     ACLEditor.ui \
-    Plugins.ui \
+    PluginConfig.ui \
     PTTButtonWidget.ui \
     LookConfig.ui \
     AudioInput.ui \
@@ -269,7 +290,8 @@ FORMS *= ConfigDialog.ui \
     RichTextEditor.ui \
     RichTextEditorLink.ui \
     UserInformation.ui \
-    VoiceRecorderDialog.ui
+    VoiceRecorderDialog.ui \
+    PluginUpdater.ui
 
 # Include TRANSLATIONS variable
 include(translations.pri)
@@ -278,6 +300,7 @@ PRECOMPILED_HEADER = mumble_pch.hpp
 INCLUDEPATH *= ../../3rdparty/qqbonjour-src
 INCLUDEPATH *= ../../3rdparty/smallft-src
 INCLUDEPATH *= widgets
+INCLUDEPATH *= ../../plugins
 
 CONFIG(static) {
   # Ensure that static Mumble.app on Mac OS X
@@ -291,6 +314,23 @@ CONFIG(static) {
     QMAKE_LFLAGS -= -Wl,-dead_strip
     QMAKE_LFLAGS += -Wl,-all_load
   }
+}
+
+!CONFIG(no-plugin-installer) {
+    SOURCES *= PluginInstaller.cpp
+    HEADERS *= PluginInstaller.h
+
+    DEFINES *= QUAZIP_STATIC
+
+    INCLUDEPATH *= ../../3rdparty/quazip-src/quazip
+    INCLUDEPATH *= ../../3rdparty/zlib-src
+
+    LIBS *= -lquazip
+    LIBS *= -lz
+
+    FORMS *= PluginInstaller.ui
+} else {
+    DEFINES *= NO_PLUGIN_INSTALLER
 }
 
 !CONFIG(no-manual-plugin) {
@@ -790,6 +830,16 @@ CONFIG(static_qt_plugins) {
   # Icon engines are special; they don't get their lib directory
   # included automatically by mkspecs/features/qt.prf
   LIBS *= -L$$[QT_INSTALL_PLUGINS]/iconengines
+}
+
+# On FreeBSD we need the util library for src/ProcessResolver.cpp to work
+freebsd {
+    LIBS *= -lutil
+}
+
+# On any other BSD we need the kvm library for src/ProcessResolver.cpp to work
+!freebsd:bsd {
+    LIBS *= -lkvm
 }
 
 lrel.output = ${QMAKE_FILE_BASE}.qm

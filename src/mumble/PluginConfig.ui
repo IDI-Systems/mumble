@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>321</width>
-    <height>235</height>
+    <width>432</width>
+    <height>253</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -53,9 +53,6 @@
         <attribute name="headerStretchLastSection">
          <bool>false</bool>
         </attribute>
-        <attribute name="headerStretchLastSection">
-         <bool>false</bool>
-        </attribute>
         <column>
          <property name="text">
           <string>Name</string>
@@ -63,7 +60,17 @@
         </column>
         <column>
          <property name="text">
-          <string>Enabled</string>
+          <string>Enable</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>PA</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>KeyEvents</string>
          </property>
         </column>
        </widget>

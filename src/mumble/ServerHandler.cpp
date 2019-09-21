@@ -59,6 +59,10 @@
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
 
+// Init ServerHandler::nextConnectionID
+int ServerHandler::nextConnectionID = 0;
+QMutex ServerHandler::nextConnectionIDMutex(QMutex::Recursive);
+
 ServerHandlerMessageEvent::ServerHandlerMessageEvent(const QByteArray &msg, unsigned int mtype, bool flush) : QEvent(static_cast<QEvent::Type>(SERVERSEND_EVENT)) {
 	qbaMsg = msg;
 	uiType = mtype;
@@ -110,6 +114,13 @@ ServerHandler::ServerHandler()
 	tConnectionTimeoutTimer = NULL;
 	uiVersion = 0;
 	iInFlightTCPPings = 0;
+
+	// assign connection ID
+	{
+		QMutexLocker lock(&nextConnectionIDMutex);
+		connectionID = nextConnectionID;
+		nextConnectionID++;
+	}
 
 	// Historically, the qWarning line below initialized OpenSSL for us.
 	// It used to have this comment:
@@ -177,6 +188,10 @@ void ServerHandler::customEvent(QEvent *evt) {
 			exit(0);
 		}
 	}
+}
+
+int ServerHandler::getConnectionID() const {
+	return connectionID;
 }
 
 void ServerHandler::udpReady() {

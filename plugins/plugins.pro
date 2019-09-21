@@ -7,8 +7,13 @@ include(../qmake/compiler.pri)
 
 TEMPLATE = subdirs
 
+CONFIG(debug, debug|release) {
+	SUBDIRS += testPlugin
+	message("Including testPlugin in debug-mode")
+}
+
 CONFIG += debug_and_release
-SUBDIRS = link
+SUBDIRS += link
 
 win32|linux {
   SUBDIRS += aoc arma2 bf1942 bf2 bf3 bf2142 bfbc2 bfheroes bf4_x86 blacklight borderlands borderlands2 breach cod2 cod4 cod5 codmw2 codmw2so cs dys etqw ffxiv gmod gtaiv gtasa gw insurgency jc2 l4d l4d2 lol lotro ql rl sr ut2004 ut3 ut99 wolfet wow

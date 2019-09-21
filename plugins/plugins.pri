@@ -8,7 +8,7 @@ include(../qmake/compiler.pri)
 TEMPLATE	= lib
 CONFIG		+= plugin debug_and_release warn_on
 CONFIG		-= qt
-DIST		*= mumble_plugin.h
+DIST		*= mumble_legacy_plugin.h
 
 CONFIG(static) {
 	CONFIG -= static

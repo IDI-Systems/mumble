@@ -3,8 +3,8 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#ifndef MUMBLE_MUMBLE_PLUGIN_UTILS_H_
-#define MUMBLE_MUMBLE_PLUGIN_UTILS_H_
+#ifndef MUMBLE_POSITIONAL_AUDIO_UTILS_H_
+#define MUMBLE_POSITIONAL_AUDIO_UTILS_H_
 
 #include <codecvt>
 #include <locale>

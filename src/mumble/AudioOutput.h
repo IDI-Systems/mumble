@@ -115,6 +115,22 @@ class AudioOutput : public QThread {
 		const float *getSpeakerPos(unsigned int &nspeakers);
 		static float calcGain(float dotproduct, float distance);
 		unsigned int getMixerFreq() const;
+
+	signals:
+		/// Signal emitted whenever an audio source has been fetched
+		///
+		/// @param outputPCM The fetched output PCM
+		/// @param sampleCount The amount of samples in the output
+		/// @param channelCount The amount of channels in the output
+		/// @param isSpeech Whether the fetched output is considered to be speech
+		/// @param A pointer to the user that this speech belongs to or nullptr if this isn't speech
+		void audioSourceFetched(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech, const ClientUser *user);
+		/// Signal emitted whenever an audio is about to be played to the user
+		///
+		/// @param outputPCM The output PCM that is to be played
+		/// @param sampleCount The amount of samples in the output
+		/// @param channelCount The amount of channels in the output
+		void audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount);
 };
 
 #endif

@@ -14,18 +14,21 @@
 #include "MainWindow.h"
 #include "User.h"
 #include "PacketDataStream.h"
-#include "Plugins.h"
+#include "PluginManager.h"
 #include "Message.h"
-#include "Global.h"
 #include "NetworkConfig.h"
 #include "Utils.h"
 #include "VoiceRecorder.h"
+#include "API.h"
 
 #ifdef USE_RNNOISE
 extern "C" {
 #include "rnnoise.h"
 }
 #endif
+
+// We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
+#include "Global.h"
 
 void Resynchronizer::addMic(short *mic)
 {
@@ -969,7 +972,7 @@ void AudioInput::encodeAudioFrame(AudioChunk chunk) {
 		iHoldFrames = 0;
 	}
 
-	if (g.s.atTransmit == Settings::Continuous) {
+	if (g.s.atTransmit == Settings::Continuous || API::PluginData::get().overwriteMicrophoneActivation.load()) {
 		// Continous transmission is enabled
 		bIsSpeech = true;
 	} else if (g.s.atTransmit == Settings::PushToTalk) {
@@ -1051,6 +1054,8 @@ void AudioInput::encodeAudioFrame(AudioChunk chunk) {
 
 	EncodingOutputBuffer buffer;
 	Q_ASSERT(buffer.size() >= static_cast<size_t>(iAudioQuality / 100 * iAudioFrames / 8));
+
+	emit audioInputEncountered(psSource, iFrameSize, iMicChannels, bIsSpeech);
 	
 	int len = 0;
 
@@ -1183,10 +1188,12 @@ void AudioInput::flushCheck(const QByteArray &frame, bool terminator, int voiceT
 		}
 	}
 
-	if (g.s.bTransmitPosition && g.p && ! g.bCenterPosition && g.p->fetch()) {
-		pds << g.p->fPosition[0];
-		pds << g.p->fPosition[1];
-		pds << g.p->fPosition[2];
+	if (g.s.bTransmitPosition && g.pluginManager && ! g.bCenterPosition && g.pluginManager->fetchPositionalData()) {
+		Position3D currentPos = g.pluginManager->getPositionalData().getPlayerPos();
+
+		pds << currentPos.x;
+		pds << currentPos.y;
+		pds << currentPos.z;
 	}
 
 	sendAudioFrame(data, pds);

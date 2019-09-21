@@ -14,7 +14,6 @@
 #include "Cert.h"
 #include "Database.h"
 #include "Log.h"
-#include "Plugins.h"
 #include "LogEmitter.h"
 #include "DeveloperConsole.h"
 #include "LCD.h"
@@ -39,6 +38,7 @@
 #include "License.h"
 #include "EnvUtils.h"
 #include "TalkingUI.h"
+#include "PluginManager.h"
 
 #include <QtCore/QLibraryInfo>
 #include <QtCore/QProcess>
@@ -53,6 +53,10 @@
 
 #if defined(Q_OS_WIN) && defined(QT_NO_DEBUG)
 # include <shellapi.h> // For CommandLineToArgvW()
+#endif
+
+#ifndef NO_PLUGIN_INSTALLER
+# include "PluginInstaller.h"
 #endif
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
@@ -140,6 +144,7 @@ int main(int argc, char **argv) {
 	bool bRpcMode = false;
 	QString rpcCommand;
 	QUrl url;
+	QStringList pluginsToBeInstalled;
 	if (a.arguments().count() > 1) {
 		QStringList args = a.arguments();
 		for (int i = 1; i < args.count(); ++i) {
@@ -149,11 +154,13 @@ int main(int argc, char **argv) {
 #endif
 			) {
 				QString helpMessage = MainWindow::tr(
-					"Usage: mumble [options] [<url>]\n"
+					"Usage: mumble [options] [<url> | <plugin_list>]\n"
 					"\n"
 					"<url> specifies a URL to connect to after startup instead of showing\n"
 					"the connection window, and has the following form:\n"
 					"mumble://[<username>[:<password>]@]<host>[:<port>][/<channel>[/<subchannel>...]][?version=<x.y.z>]\n"
+					"\n"
+					"<plugin_list> is a list of plugin files that shall be installed"
 					"\n"
 					"The version query parameter has to be set in order to invoke the\n"
 					"correct client version. It currently defaults to 1.2.0.\n"
@@ -272,7 +279,12 @@ int main(int argc, char **argv) {
 			} else if (args.at(i) == QLatin1String("--print-echocancel-queue")) {
 				 g.bDebugPrintQueue = true;
 			} else {
-				if (!bRpcMode) {
+#ifndef NO_PLUGIN_INSTALLER
+				if (PluginInstaller::canBePluginFile(args.at(i))) {
+					pluginsToBeInstalled << args.at(i);
+				} else {
+#endif
+					if (!bRpcMode) {
 					QUrl u = QUrl::fromEncoded(args.at(i).toUtf8());
 					if (u.isValid() && (u.scheme() == QLatin1String("mumble"))) {
 						url = u;
@@ -283,6 +295,9 @@ int main(int argc, char **argv) {
 						}
 					}
 				}
+#ifndef NO_PLUGIN_INSTALLER
+				}
+#endif
 			}
 		}
 	}
@@ -446,6 +461,25 @@ int main(int argc, char **argv) {
 	} else if (qttranslator.load(QLatin1String(":/qtbase_") + locale)) {
 		a.installTranslator(&qttranslator);
 	}
+
+#ifndef NO_PLUGIN_INSTALLER
+	if (!pluginsToBeInstalled.isEmpty()) {
+
+		foreach(QString currentPlugin, pluginsToBeInstalled) {
+
+			try {
+				PluginInstaller installer(currentPlugin);
+				installer.exec();
+			} catch(const PluginInstallException& e) {
+				qCritical() << qUtf8Printable(e.getMessage());
+			}
+
+		}
+
+		return 0;
+	}
+#endif
+
 	
 	// Initialize proxy settings
 	NetworkConfig::SetupProxy();
@@ -465,6 +499,10 @@ int main(int argc, char **argv) {
 	// Initialize bonjour
 	g.bc = new BonjourClient();
 #endif
+	
+	// PluginManager
+	g.pluginManager = new PluginManager();
+	g.pluginManager->rescanPlugins();
 
 #ifdef USE_OVERLAY
 	g.o = new Overlay();
@@ -509,10 +547,6 @@ int main(int argc, char **argv) {
 	SocketRPC *srpc = new SocketRPC(QLatin1String("Mumble"));
 
 	g.l->log(Log::Information, MainWindow::tr("Welcome to Mumble."));
-
-	// Plugins
-	g.p = new Plugins(NULL);
-	g.p->rescanPlugins();
 
 	Audio::start();
 	g.mw->onChangeMute();
@@ -584,12 +618,13 @@ int main(int argc, char **argv) {
 		new VersionCheck(false, g.mw, true);
 #endif
 	}
-#else
-	g.mw->msgBox(MainWindow::tr("Skipping version check in debug mode."));
-#endif
+
 	if (g.s.bPluginCheck) {
-		g.p->checkUpdates();
+		g.pluginManager->checkForPluginUpdates();
 	}
+#else // QT_NO_DEBUG
+	g.mw->msgBox(MainWindow::tr("Skipping version check in debug mode."));
+#endif // QT_NO_DEBUG
 
 	if (url.isValid()) {
 		OpenURLEvent *oue = new OpenURLEvent(url);
@@ -623,20 +658,26 @@ int main(int argc, char **argv) {
 
 	delete srpc;
 
+	delete g.talkingUI;
+	// Delete the MainWindow before the ServerHandler gets reset in order to allow all callbacks
+	// trggered by this deletion to still access the ServerHandler (atm all these callbacks are in PluginManager.cpp)
+	delete g.mw;
+	g.mw = nullptr; // Make it clear to any destruction code, that MainWindow no longer exists
+
 	g.sh.reset();
+
 	while (sh && ! sh.unique())
 		QThread::yieldCurrentThread();
 	sh.reset();
-
-	delete g.talkingUI;
-	delete g.mw;
 
 	delete g.nam;
 	delete g.lcd;
 
 	delete g.db;
-	delete g.p;
 	delete g.l;
+	g.l = nullptr; // Make it clear to any destruction code that Log no longer exists
+
+	delete g.pluginManager;
 
 #ifdef USE_BONJOUR
 	delete g.bc;

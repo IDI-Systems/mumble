@@ -205,3 +205,15 @@ CONFIG+=dpkg-buildflags
 
 CONFIG+=no-classic-theme
  Don't include the classic theme.
+
+CONFIG+=no-plugin-installer
+ Don't build the plugin-installer. Note that this also removes
+ the Quazip library, which might be especially interesting, if
+ you can't use software licensed under LGPL (which QuaZip is).
+
+CONFIG+=bundled-zlib
+ Use the bundled zlib version instead of the system's one.
+
+CONFIG+=plugin-debug
+ Add debug statements to the build that are useful for debugging
+ custom plugins written for Mumble.

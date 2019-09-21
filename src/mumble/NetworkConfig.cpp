@@ -30,12 +30,12 @@ static ConfigRegistrar registrar(1300, NetworkConfigNew);
 
 NetworkConfig::NetworkConfig(Settings &st) : ConfigWidget(st) {
 	setupUi(this);
+
 	qcbType->setAccessibleName(tr("Type"));
 	qleHostname->setAccessibleName(tr("Hostname"));
 	qlePort->setAccessibleName(tr("Port"));
 	qleUsername->setAccessibleName(tr("Username"));
 	qlePassword->setAccessibleName(tr("Password"));
-
 }
 
 QString NetworkConfig::title() const {
@@ -75,7 +75,8 @@ void NetworkConfig::load(const Settings &r) {
 
 	const QSignalBlocker blocker(qcbAutoUpdate);
 	loadCheckBox(qcbAutoUpdate, r.bUpdateCheck);
-	loadCheckBox(qcbPluginUpdate, r.bPluginCheck);
+	loadCheckBox(qcbPluginUpdateCheck, r.bPluginCheck);
+	loadCheckBox(qcbPluginAutoUpdate, r.bPluginAutoUpdate);
 	loadCheckBox(qcbUsage, r.bUsage);
 }
 
@@ -93,9 +94,10 @@ void NetworkConfig::save() const {
 	s.qsProxyUsername = qleUsername->text();
 	s.qsProxyPassword = qlePassword->text();
 
-	s.bUpdateCheck=qcbAutoUpdate->isChecked();
-	s.bPluginCheck=qcbPluginUpdate->isChecked();
-	s.bUsage=qcbUsage->isChecked();
+	s.bUpdateCheck = qcbAutoUpdate->isChecked();
+	s.bPluginCheck = qcbPluginUpdateCheck->isChecked();
+	s.bPluginAutoUpdate = qcbPluginAutoUpdate->isChecked();
+	s.bUsage = qcbUsage->isChecked();
 }
 
 static QNetworkProxy::ProxyType local_to_qt_proxy(Settings::ProxyType pt) {

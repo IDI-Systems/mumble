@@ -11,6 +11,10 @@
 #include <QtCore/QStack>
 
 #ifdef MUMBLE
+#include "PluginManager.h"
+// We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
+#include "Global.h"
+
 QHash<int, Channel *> Channel::c_qhChannels;
 QReadWriteLock Channel::c_qrwlChannels;
 #endif
@@ -43,8 +47,8 @@ Channel::~Channel() {
 
 	foreach(ChanACL *acl, qlACL)
 		delete acl;
-	foreach(Group *g, qhGroups)
-		delete g;
+	foreach(Group *gr, qhGroups)
+		delete gr;
 	foreach(Channel *l, qhLinks.keys())
 		unlink(l);
 
@@ -66,6 +70,11 @@ Channel *Channel::add(int id, const QString &name) {
 
 	Channel *c = new Channel(id, name, NULL);
 	c_qhChannels.insert(id, c);
+
+	c->connect(c, SIGNAL(channelEntered(const Channel*, const Channel*, const User*)), g.pluginManager, SLOT(on_channelEntered(const Channel*,
+					const Channel*, const User*)), Qt::DirectConnection);
+	c->connect(c, SIGNAL(channelExited(const Channel*, const User*)), g.pluginManager, SLOT(on_channelExited(const Channel*, const User*)), Qt::DirectConnection);
+
 	return c;
 }
 
@@ -159,14 +168,20 @@ void Channel::removeChannel(Channel *c) {
 }
 
 void Channel::addUser(User *p) {
-	if (p->cChannel)
-		p->cChannel->removeUser(p);
+	Channel *prevChannel = p->cChannel;
+
+	if (prevChannel)
+		prevChannel->removeUser(p);
 	p->cChannel = this;
 	qlUsers << p;
+
+	emit channelEntered(this, prevChannel, p);
 }
 
 void Channel::removeUser(User *p) {
 	qlUsers.removeAll(p);
+
+	emit channelExited(this, p);
 }
 
 Channel::operator QString() const {

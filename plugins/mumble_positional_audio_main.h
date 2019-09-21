@@ -11,11 +11,10 @@
 // base address of a module (e.g. shared library), the latter reads memory at the
 // specified address and stores it in a variable.
 
-#ifndef MUMBLE_PLUGIN_MAIN_H_
-#define MUMBLE_PLUGIN_MAIN_H_
+#ifndef MUMBLE_POSITIONAL_AUDIO_MAIN_H_
+#define MUMBLE_POSITIONAL_AUDIO_MAIN_H_
 
-#include "mumble_plugin.h"
-#include "mumble_plugin_win32_internals.h"
+#include "mumble_positional_audio_win32_internals.h"
 
 #include <cstring>
 
@@ -94,9 +93,9 @@ static inline int8_t isWin32Process64Bit(const procptr_t &baseAddress) {
 }
 
 #ifdef WIN32
-# include "../mumble_plugin_win32.h"
+# include "../mumble_positional_audio_win32.h"
 #else
-# include "../mumble_plugin_linux.h"
+# include "../mumble_positional_audio_linux.h"
 #endif
 
 #endif

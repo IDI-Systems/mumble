@@ -2107,3 +2107,32 @@ void Server::msgServerConfig(ServerUser *, MumbleProto::ServerConfig &) {
 
 void Server::msgSuggestConfig(ServerUser *, MumbleProto::SuggestConfig &) {
 }
+
+void Server::msgPluginDataTransmission(ServerUser *sender, MumbleProto::PluginDataTransmission &msg) {
+	// a client's plugin has sent us a message that we shall delegate to its receivers
+
+	if (!msg.has_data() || !msg.has_dataid()) {
+		// messages without data and/or without a data ID can't be used by the clients. Thus we don't even have to send it
+		return;
+	}
+
+	if (!msg.has_sendersession()) {
+		msg.set_sendersession(sender->uiSession);
+	}
+
+	// copy needed data from message in order to be able to remove info about receivers from the message as this doesn't
+	// matter for the client
+	size_t receiverAmount = msg.receiversessions_size();
+	const ::google::protobuf::RepeatedField< ::google::protobuf::uint32 > receiverSessions = msg.receiversessions();
+
+	msg.clear_receiversessions();
+
+	for(int i = 0; static_cast<size_t>(i) < receiverAmount; i++) {
+		ServerUser *receiver = qhUsers.value(receiverSessions.Get(i));
+
+		if (receiver) {
+			// We can simply redirect the message we have received to the clients
+			sendMessage(receiver, msg);
+		}
+	}
+}

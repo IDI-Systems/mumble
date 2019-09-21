@@ -3,11 +3,11 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#ifndef MUMBLE_MUMBLE_PLUGIN_WIN32_H_
-#define MUMBLE_MUMBLE_PLUGIN_WIN32_H_
+#ifndef MUMBLE_POSITIONAL_AUDIO_WIN32_H_
+#define MUMBLE_POSITIONAL_AUDIO_WIN32_H_
 
-# ifndef MUMBLE_PLUGIN_MAIN_H_
-#  error "Include mumble_plugin_main.h instead of mumble_plugin_win32.h"
+# ifndef MUMBLE_POSITIONAL_AUDIO_MAIN_H_
+#  error "Include mumble_positional_audio_main.h instead of mumble_positional_audio_win32.h"
 # endif
 
 #define _USE_MATH_DEFINES

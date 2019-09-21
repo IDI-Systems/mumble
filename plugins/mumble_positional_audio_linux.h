@@ -3,11 +3,11 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#ifndef MUMBLE_PLUGIN_LINUX_H_
-#define MUMBLE_PLUGIN_LINUX_H_
+#ifndef MUMBLE_POSITIONAL_AUDIO_LINUX_H_
+#define MUMBLE_POSITIONAL_AUDIO_LINUX_H_
 
-# ifndef MUMBLE_PLUGIN_MAIN_H_
-#  error "Include mumble_plugin_main.h instead of mumble_plugin_linux.h"
+# ifndef MUMBLE_POSITIONAL_AUDIO_MAIN_H_
+#  error "Include mumble_positional_audio_main.h instead of mumble_positional_audio_linux.h"
 # endif
 
 #include <sys/uio.h>
