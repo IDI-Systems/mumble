@@ -51,7 +51,10 @@ bool LegacyPlugin::doInitialize() {
 		delete description;
 
 		this->name = convertWString(this->mumPlug->shortname);
-		this->description = convertWString(this->mumPlug->description);
+		// Although the MumblePlugin struct has a member called "description", the actual description seems to
+		// always only be returned by the longdesc function (The description member is actually just the name with some version
+		// info)
+		this->description = convertWString(this->mumPlug->longdesc());
 
 		return true;
 	} else {
