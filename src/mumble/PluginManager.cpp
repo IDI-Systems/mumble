@@ -57,6 +57,9 @@ void PluginManager::clearPlugins() {
 	pluginList.clear();
 }
 
+#define LOG_FOUND(plugin, path, legacyStr) qDebug("Found %splugin '%s' at \"%s\"", legacyStr, plugin->getName(), qPrintable(path))
+#define LOG_FOUND_PLUGIN(plugin, path) LOG_FOUND(plugin, path, "")
+#define LOG_FOUND_LEGACY_PLUGIN(plugin, path) LOG_FOUND(plugin, path, "legacy ")
 void PluginManager::rescanPlugins() {
 	this->clearPlugins();
 
@@ -79,7 +82,7 @@ void PluginManager::rescanPlugins() {
 				QSharedPointer<Plugin> p(Plugin::createNew<Plugin>(currentInfo.absoluteFilePath()));
 
 #ifdef MUMBLE_PLUGIN_DEBUG
-				qDebug() << "Found plugin" << currentInfo.absoluteFilePath();
+				LOG_FOUND_PLUGIN(p, currentInfo.absoluteFilePath());
 #endif
 
 				// if this code block is reached, the plugin was instantiated successfully so we can add it to the list
@@ -91,7 +94,7 @@ void PluginManager::rescanPlugins() {
 					QSharedPointer<LegacyPlugin> lp(Plugin::createNew<LegacyPlugin>(currentInfo.absoluteFilePath()));
 					
 #ifdef MUMBLE_PLUGIN_DEBUG
-					qDebug() << "Found legacy plugin" << currentInfo.absoluteFilePath();
+					LOG_FOUND_LEGACY_PLUGIN(lp, currentInfo.absoluteFilePath());
 #endif
 				} catch(const PluginError& e) {
 					qWarning() << "Non-plugin library in plugin directory:" << currentInfo.absoluteFilePath();
