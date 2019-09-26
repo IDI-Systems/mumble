@@ -81,7 +81,7 @@ class Plugin : public QObject {
 		QString pluginPath;
 		uint32_t pluginID;
 		bool pluginIsLoaded;
-		QReadWriteLock pluginLock;
+		mutable QReadWriteLock pluginLock;
 		PluginAPIFunctions apiFnc;
 
 		virtual bool doInitialize();
@@ -89,8 +89,8 @@ class Plugin : public QObject {
 
 	public:
 		virtual ~Plugin() Q_DECL_OVERRIDE;
-		virtual bool isValid();
-		virtual bool isLoaded() Q_DECL_FINAL;
+		virtual bool isValid() const;
+		virtual bool isLoaded() const Q_DECL_FINAL;
 
 		// template for a factory-method which is needed to ensure that every Plugin object will always
 		// be initialized be the right call to its init() functions (if overwritten by a child-class, then
@@ -115,16 +115,16 @@ class Plugin : public QObject {
 		// functions for direct plugin-interaction
 		virtual MumbleError_t init();
 		virtual void shutdown();
-		virtual const char* getName();
-		virtual Version_t getAPIVersion();
+		virtual const char* getName() const;
+		virtual Version_t getAPIVersion() const;
 		virtual void registerAPIFunctions(const MumbleAPI *api);
 
 		virtual void setMumbleInfo(Version_t mumbleVersion, Version_t mumbleAPIVersion, Version_t minimalExpectedAPIVersion);
-		virtual Version_t getVersion();
-		virtual const char* getAuthor();
-		virtual const char* getDescription();
+		virtual Version_t getVersion() const;
+		virtual const char* getAuthor() const;
+		virtual const char* getDescription() const;
 		virtual void registerPluginID(uint32_t id);
-		virtual uint32_t getPluginFeatures();
+		virtual uint32_t getPluginFeatures() const;
 		virtual uint32_t deactivateFeatures(uint32_t features);
 		virtual uint8_t initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount);
 		virtual bool fetchPositionalData(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,

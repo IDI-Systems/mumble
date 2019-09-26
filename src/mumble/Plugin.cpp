@@ -172,13 +172,13 @@ void Plugin::setDefaultImplementations() {
 	CHECK_AND_SET_DEFAULT(onAudioOutputAboutToPlay);
 }*/
 
-bool Plugin::isValid() {
+bool Plugin::isValid() const {
 	PluginReadLocker lock(&this->pluginLock);
 
 	return pluginIsValid;
 }
 
-bool Plugin::isLoaded() {
+bool Plugin::isLoaded() const {
 	PluginReadLocker lock(&this->pluginLock);
 
 	return pluginIsLoaded;
@@ -216,7 +216,7 @@ void Plugin::shutdown() {
 	}
 }
 
-const char* Plugin::getName() {
+const char* Plugin::getName() const {
 	if (this->apiFnc.getName) {
 		return this->apiFnc.getName();
 	} else {
@@ -224,7 +224,7 @@ const char* Plugin::getName() {
 	}
 }
 
-Version_t Plugin::getAPIVersion() {
+Version_t Plugin::getAPIVersion() const {
 	if (this->apiFnc.getAPIVersion) {
 		return this->apiFnc.getAPIVersion();
 	} else {
@@ -245,7 +245,7 @@ void Plugin::setMumbleInfo(Version_t mumbleVersion, Version_t mumbleAPIVersion, 
 	}
 }
 
-Version_t Plugin::getVersion() {
+Version_t Plugin::getVersion() const {
 	if (this->apiFnc.getVersion) {
 		return this->apiFnc.getVersion();
 	} else {
@@ -253,7 +253,7 @@ Version_t Plugin::getVersion() {
 	}
 }
 
-const char* Plugin::getAuthor() {
+const char* Plugin::getAuthor() const {
 	if (this->apiFnc.getAuthor) {
 		return this->apiFnc.getAuthor();
 	} else {
@@ -261,7 +261,7 @@ const char* Plugin::getAuthor() {
 	}
 }
 
-const char* Plugin::getDescription() {
+const char* Plugin::getDescription() const {
 	if (this->apiFnc.getDescription) {
 		return this->apiFnc.getDescription();
 	} else {
@@ -275,7 +275,7 @@ void Plugin::registerPluginID(uint32_t id) {
 	}
 }
 
-uint32_t Plugin::getPluginFeatures() {
+uint32_t Plugin::getPluginFeatures() const {
 	if (this->apiFnc.getPluginFeatures) {
 		return this->apiFnc.getPluginFeatures();
 	} else {

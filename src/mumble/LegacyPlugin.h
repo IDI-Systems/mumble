@@ -41,9 +41,9 @@ class LegacyPlugin : public Plugin {
 		virtual ~LegacyPlugin() Q_DECL_OVERRIDE;
 
 		// functions for direct plugin-interaction
-		virtual const char* getName() Q_DECL_OVERRIDE;
+		virtual const char* getName() const Q_DECL_OVERRIDE;
 
-		virtual const char* getDescription() Q_DECL_OVERRIDE;
+		virtual const char* getDescription() const Q_DECL_OVERRIDE;
 		virtual uint8_t initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount) Q_DECL_OVERRIDE;
 		virtual bool fetchPositionalData(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,
 				float *camera_axis, const char **context, const char **identity) Q_DECL_OVERRIDE;

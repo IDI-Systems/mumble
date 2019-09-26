@@ -113,7 +113,7 @@ void LegacyPlugin::resolveFunctionPointers() {
 	}
 }
 
-const char* LegacyPlugin::getName() {
+const char* LegacyPlugin::getName() const {
 	if (this->name) {
 		return this->name;
 	} else {
@@ -121,7 +121,7 @@ const char* LegacyPlugin::getName() {
 	}	
 }
 
-const char* LegacyPlugin::getDescription() {
+const char* LegacyPlugin::getDescription() const {
 	if (this->description) {
 		return this->description;
 	} else {
