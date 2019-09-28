@@ -103,6 +103,20 @@ extern "C" {
 	/// 	FEATURE_NONE. If none of the requested features can be disabled return the unmodified features parameter.
 	PLUGIN_EXPORT uint32_t deactivateFeatures(uint32_t features);
 
+	/// Requests this plugin to show an about-dialog.
+	/// If the provided parent is nullptr, the plugin should create an independent about-dialog.
+	///
+	/// @param parent This is either nullptr or a pointer to the QWidget that should be used as the parent for the shown
+	/// 	about-dialog.
+	PLUGIN_EXPORT void showAboutDialog(void *parent);
+
+	/// Requests this plugin to show a config-dialog.
+	/// If the provided parent is nullptr, the plugin should create an independent config-dialog.
+	///
+	/// @param parent This is either nullptr or a pointer to the QWidget that should be used as the parent for the shown
+	/// 	config-dialog
+	PLUGIN_EXPORT void showConfigDialog(void *parent);
+
 	
 	// -------- Positional Audio --------
 	// If this plugin wants to provide positional audio, all functiosn of this category have to be implemented
