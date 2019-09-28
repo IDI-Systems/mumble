@@ -123,17 +123,17 @@ extern "C" {
 
 	/// Retrieves the positional audio data. If no data can be fetched, set all float-vectors to 0 and return false.
 	///
-	/// @param[out] avatar_pos A float-array of size 3 representing the cartesian position of the player/avatar in the ingame world.
+	/// @param[out] avatarPos A float-array of size 3 representing the cartesian position of the player/avatar in the ingame world.
 	/// 	One unit represents one meter of distance.
-	/// @param[out] avatar_front A float-array of size 3 representing the cartesian direction-vector of the player/avatar ingame (where it
+	/// @param[out] avatarDir A float-array of size 3 representing the cartesian direction-vector of the player/avatar ingame (where it
 	/// 	is facing).
-	/// @param[out] avatar_axis A float-array of size 3 representing the vector pointing from the toes of the character to its head. One
+	/// @param[out] avatarAxis A float-array of size 3 representing the vector pointing from the toes of the character to its head. One
 	/// 	unit represents one meter of distance.
-	/// @param[out] camera_pos A float-array of size 3 representing the cartesian position of the camera in the ingame world.
+	/// @param[out] cameraPos A float-array of size 3 representing the cartesian position of the camera in the ingame world.
 	/// 	One unit represents one meter of distance.
-	/// @param[out] camera_front A float-array of size 3 representing the cartesian direction-vector of the camera ingame (where it
+	/// @param[out] cameraDir A float-array of size 3 representing the cartesian direction-vector of the camera ingame (where it
 	/// 	is facing).
-	/// @param[out] camera_axis A float-array of size 3 representing a vector from the bottom of the camera to its top. One unit
+	/// @param[out] cameraAxis A float-array of size 3 representing a vector from the bottom of the camera to its top. One unit
 	/// 	represents one meter of distance.
 	/// @param[out] context A pointer to where the pointer to a C-encoded string storing the context of the provided positional data
 	/// 	shall be written. This context should include information about the server (and team) the player is on. Only players with identical
@@ -144,8 +144,8 @@ extern "C" {
 	/// 	until the next invokation of this function or until shutdownPositionalData is called.
 	/// @returns Whether this plugin can continue delivering positional data. If this function returns false, shutdownPositionalData will
 	/// 	be called.
-	PLUGIN_EXPORT bool fetchPositionalData(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,
-			float *camera_axis, const char **context, const char **identity);
+	PLUGIN_EXPORT bool fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
+			float *cameraAxis, const char **context, const char **identity);
 
 	/// Indicates that this plugin will not be asked for positional data any longer. Thus any memory allocated for this purpose should
 	/// be freed at this point.
