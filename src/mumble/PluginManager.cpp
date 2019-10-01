@@ -252,8 +252,6 @@ bool PluginManager::fetchPositionalData() {
 	}
 
 	return retStatus;
-
-	return false;
 }
 
 void PluginManager::unlinkPositionalData() {

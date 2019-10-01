@@ -54,6 +54,12 @@ typedef Vector3D Position3D;
 
 class PositionalData {
 	friend class PluginManager; // needed in order for PluginManager::fetch to write to the contained fields
+};
+
+// create an alias for Position3D as it can also represent a vector
+typedef Vector3D Position3D;
+
+class PositionalData {
 	protected:
 		Position3D playerPos;
 		Vector3D playerDir;
