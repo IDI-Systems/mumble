@@ -27,7 +27,7 @@
 #include "Net.h"
 #include "NetworkConfig.h"
 #include "OverlayClient.h"
-#include "Plugins.h"
+#include "PluginManager.h"
 #include "PTTButtonWidget.h"
 #include "RichTextEditor.h"
 #include "ServerHandler.h"
@@ -2256,7 +2256,7 @@ void MainWindow::userStateChanged() {
 	if (g.s.bStateInTray) {
 		updateTrayIcon();
 	}
-	
+
 	ClientUser *user = ClientUser::get(g.uiSession);
 	if (user == NULL) {
 		g.bAttenuateOthers = false;
@@ -2382,7 +2382,8 @@ void MainWindow::on_qaAudioStats_triggered() {
 }
 
 void MainWindow::on_qaAudioUnlink_triggered() {
-	g.p->bUnlink = true;
+	// g.p->bUnlink = true;
+	g.pluginManager->unlinkPositionalData();
 }
 
 void MainWindow::on_qaConfigDialog_triggered() {

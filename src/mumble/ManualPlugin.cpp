@@ -7,6 +7,7 @@
 
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
+#include <QtCore/QString>
 #if QT_VERSION >= 0x050000
 # include <QtWidgets/QMessageBox>
 #else
@@ -289,4 +290,17 @@ MumblePlugin *ManualPlugin_getMumblePlugin() {
 
 MumblePluginQt *ManualPlugin_getMumblePluginQt() {
 	return &manualqt;
+}
+
+
+/////////// Implementation of the ManualPlugin class //////////////
+ManualPlugin::ManualPlugin(QObject *p) : LegacyPlugin(QString::fromUtf8("manual.builtin"), true, p) {
+}
+
+ManualPlugin::~ManualPlugin() {
+}
+
+void ManualPlugin::resolveFunctionPointers() {
+	this->mumPlug = &manual;
+	this->mumPlugQt = &manualqt;
 }

@@ -7,12 +7,15 @@
 #include "LegacyPlugin.h"
 #include <QtCore/QReadLocker>
 #include <QtCore/QWriteLocker>
+#include <QtCore/QReadLocker>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfoList>
 #include <QtCore/QFileInfo>
 
-PluginManager::PluginManager(QString sysPath, QString userPath, QObject *p) : QObject(p), pluginListLock(QReadWriteLock::Recursive), pluginList(),
-	systemPluginsPath(sysPath), userPluginsPath(userPath) {
+#include "ManualPlugin.h"
+
+PluginManager::PluginManager(QString sysPath, QString userPath, QObject *p) : QObject(p), pluginCollectionLock(QReadWriteLock::Recursive),
+	pluginHashMap(), systemPluginsPath(sysPath), userPluginsPath(userPath) {
 	// Set the paths to read plugins from
 
 #ifdef Q_OS_WIN
@@ -51,15 +54,17 @@ PluginManager::~PluginManager() {
 }
 
 void PluginManager::clearPlugins() {
-	QWriteLocker lock(&this->pluginListLock);
+	QWriteLocker lock(&this->pluginCollectionLock);
 
 	// Clear the list itself
-	pluginList.clear();
+	pluginHashMap.clear();
 }
 
-#define LOG_FOUND(plugin, path, legacyStr) qDebug("Found %splugin '%s' at \"%s\"", legacyStr, plugin->getName(), qPrintable(path))
+#define LOG_FOUND(plugin, path, legacyStr) qDebug("Found %splugin '%s' at \"%s\"", legacyStr, qUtf8Printable(plugin->getName()), qUtf8Printable(path));\
+	qDebug() << "Its description:" << qUtf8Printable(plugin->getDescription())
 #define LOG_FOUND_PLUGIN(plugin, path) LOG_FOUND(plugin, path, "")
 #define LOG_FOUND_LEGACY_PLUGIN(plugin, path) LOG_FOUND(plugin, path, "legacy ")
+#define LOG_FOUND_BUILTIN(plugin) LOG_FOUND(plugin, QString::fromUtf8("<builtin>"), "built-in ")
 void PluginManager::rescanPlugins() {
 	this->clearPlugins();
 
@@ -85,8 +90,8 @@ void PluginManager::rescanPlugins() {
 				LOG_FOUND_PLUGIN(p, currentInfo.absoluteFilePath());
 #endif
 
-				// if this code block is reached, the plugin was instantiated successfully so we can add it to the list
-				pluginList.append(p);
+				// if this code block is reached, the plugin was instantiated successfully so we can add it to the map
+				pluginHashMap.insert(p->getID(), p);
 			} catch(const PluginError& e) {
 				// If an exception is thrown, this library does not represent a proper plugin
 				// Check if it might be a legacy plugin instead
@@ -96,10 +101,87 @@ void PluginManager::rescanPlugins() {
 #ifdef MUMBLE_PLUGIN_DEBUG
 					LOG_FOUND_LEGACY_PLUGIN(lp, currentInfo.absoluteFilePath());
 #endif
+					pluginHashMap.insert(lp->getID(), lp);
 				} catch(const PluginError& e) {
 					qWarning() << "Non-plugin library in plugin directory:" << currentInfo.absoluteFilePath();
 				}
 			}
 		}
 	}
-};
+
+	// handle built-in plugins
+#ifdef USE_MANUAL_PLUGIN
+	try {
+		QSharedPointer<ManualPlugin> mp(Plugin::createNew<ManualPlugin>());
+
+		pluginHashMap.insert(mp->getID(), mp);
+#ifdef MUMBLE_PLUGIN_DEBUG
+		LOG_FOUND_BUILTIN(mp);
+#endif
+	} catch(const PluginError& e) {
+		qCritical() << "Failed at loading manual plugin:" << e.what();
+	}
+#endif
+}
+
+const QSharedPointer<const Plugin> PluginManager::getPlugin(uint32_t pluginID) const {
+	QReadLocker lock(&this->pluginCollectionLock);
+	
+	return this->pluginHashMap.value(pluginID, nullptr);
+}
+
+void PluginManager::checkForPluginUpdates() const {
+	// TODO
+}
+
+bool PluginManager::fetchPositionalData() {
+	// TODO
+	return false;
+}
+
+void PluginManager::unlinkPositionalData() {
+	// TODO
+}
+
+bool PluginManager::isPositionalDataAvailable() const {
+	QReadLocker lock(&this->activePosDataPluginLock);
+
+	return this->activePositionalDataPlugin != nullptr;
+}
+
+const PositionalData& PluginManager::getPositionalData() const {
+	return this->positionalData;
+}
+
+void PluginManager::enablePositionalDataFor(const QSharedPointer<const Plugin>& plugin, bool enable) const {
+	// TODO
+}
+
+const QVector<QSharedPointer<const Plugin> > PluginManager::getPlugins(bool sorted) const {
+	QReadLocker lock(&this->pluginCollectionLock);
+
+	QVector<QSharedPointer<const Plugin>> pluginList;
+
+	QHash<uint32_t, QSharedPointer<Plugin>>::const_iterator it = this->pluginHashMap.constBegin();
+	if (sorted) {
+		QList ids = this->pluginHashMap.keys();
+
+		// sort keys so that the corresponding Plugins are in alphabetical order based on their name
+		std::sort(ids.begin(), ids.end(), [this](uint32_t first, uint32_t second) {
+			return QString::compare(this->pluginHashMap.value(first)->getName(), this->pluginHashMap.value(second)->getName(),
+					Qt::CaseInsensitive) <= 0;
+		});
+
+		foreach(uint32_t currentID, ids) {
+			pluginList.append(this->pluginHashMap.value(currentID));
+		}
+	} else {
+		while (it != this->pluginHashMap.constEnd()) {
+			pluginList.append(it.value());
+
+			it++;
+		}
+	}
+
+	return pluginList;
+}

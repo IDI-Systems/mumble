@@ -102,6 +102,10 @@ HEADERS *= BanEditor.h \
     Audio.h \
     ConfigDialog.h \
     Plugins.h \
+	Plugin.h \
+	LegacyPlugin.h \
+	PluginManager.h \
+	PositionalData.h \
     PTTButtonWidget.h \
     LookConfig.h \
     Overlay.h \
@@ -172,6 +176,10 @@ SOURCES *= BanEditor.cpp \
     Audio.cpp \
     ConfigDialog.cpp \
     Plugins.cpp \
+	Plugin.cpp \
+	LegacyPlugin.cpp \
+	PluginManager.cpp \
+	PositionalData.cpp \
     PTTButtonWidget.cpp \
     LookConfig.cpp \
     OverlayClient.cpp \
@@ -266,6 +274,7 @@ PRECOMPILED_HEADER = mumble_pch.hpp
 INCLUDEPATH *= ../../3rdparty/qqbonjour-src
 INCLUDEPATH *= ../../3rdparty/smallft-src
 INCLUDEPATH *= widgets
+INCLUDEPATH *= pluginAPI
 
 CONFIG(static) {
   # Ensure that static Mumble.app on Mac OS X

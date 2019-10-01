@@ -14,7 +14,6 @@
 #include "Cert.h"
 #include "Database.h"
 #include "Log.h"
-#include "Plugins.h"
 #include "LogEmitter.h"
 #include "DeveloperConsole.h"
 #include "Global.h"
@@ -39,6 +38,8 @@
 #include "UserLockFile.h"
 #include "License.h"
 #include "EnvUtils.h"
+#include "PluginManager.h"
+#include <iostream>
 
 #if defined(Q_OS_WIN) && defined(QT_NO_DEBUG)
 #include <shellapi.h> // For CommandLineToArgvW()
@@ -463,9 +464,9 @@ int main(int argc, char **argv) {
 
 	g.l->log(Log::Information, MainWindow::tr("Welcome to Mumble."));
 
-	// Plugins
-	g.p = new Plugins(NULL);
-	g.p->rescanPlugins();
+	// PluginManager
+	g.pluginManager = new PluginManager();
+	g.pluginManager->rescanPlugins();
 
 	Audio::start();
 
@@ -540,7 +541,7 @@ int main(int argc, char **argv) {
 	g.mw->msgBox(MainWindow::tr("Skipping version check in debug mode."));
 #endif
 	if (g.s.bPluginCheck) {
-		g.p->checkUpdates();
+		g.pluginManager->checkForPluginUpdates();
 	}
 
 	if (url.isValid()) {
@@ -586,7 +587,7 @@ int main(int argc, char **argv) {
 	delete g.lcd;
 
 	delete g.db;
-	delete g.p;
+	delete g.pluginManager;
 	delete g.l;
 
 #ifdef USE_BONJOUR

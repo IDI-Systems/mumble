@@ -22,7 +22,7 @@ class AudioInput;
 class AudioOutput;
 class Database;
 class Log;
-class Plugins;
+class PluginManager;
 class QSettings;
 class Overlay;
 class LCD;
@@ -50,7 +50,7 @@ public:
 	 */
 	Database *db;
 	Log *l;
-	Plugins *p;
+	PluginManager *pluginManager;
 	QSettings *qs;
 	Overlay *o;
 	LCD *lcd;

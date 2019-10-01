@@ -29,39 +29,29 @@ char* convertWString(const std::wstring& wStr) {
 	return buffer;
 }
 
-LegacyPlugin::LegacyPlugin(QString path, QObject *p) : Plugin(path, p), name(0), description(0), context(0), identity(0), oldIdentity() {
+LegacyPlugin::LegacyPlugin(QString path, bool isBuiltIn, QObject *p) : Plugin(path, isBuiltIn, p), name(), description(), context(0), identity(0),
+	oldIdentity(), mumPlug(0), mumPlug2(0), mumPlugQt(0) {
 }
 
 LegacyPlugin::~LegacyPlugin() {
-	delete name;
-	delete description;
 	delete context;
 	delete identity;
 }
 
 bool LegacyPlugin::doInitialize() {
 	if (Plugin::doInitialize()) {
-		// intialization seems to have succeeded so far
+		// initialization seems to have succeeded so far
 		// This means that mumPlug is initialized
 		
-		// delete name and description in case this function is being invoked a second time for some reason
-		// If it is called for the first time name and description should have been initialized to NULL making the
-		// delete operation a void operation
-		delete name;
-		delete description;
-
-		this->name = convertWString(this->mumPlug->shortname);
+		this->name = QString::fromStdWString(this->mumPlug->shortname);
 		// Although the MumblePlugin struct has a member called "description", the actual description seems to
 		// always only be returned by the longdesc function (The description member is actually just the name with some version
 		// info)
-		this->description = convertWString(this->mumPlug->longdesc());
+		this->description = QString::fromStdWString(this->mumPlug->longdesc());
 
 		return true;
 	} else {
 		// initialization has failed
-		this->name = nullptr;
-		this->description = nullptr;
-
 		// pass on info about failed init
 		return false;
 	}
@@ -113,22 +103,55 @@ void LegacyPlugin::resolveFunctionPointers() {
 	}
 }
 
-const char* LegacyPlugin::getName() const {
-	if (this->name) {
+QString LegacyPlugin::getName() const {
+	if (!this->name.isEmpty()) {
 		return this->name;
 	} else {
-		return "Unknown Legacy Plugin";
+		return QString::fromUtf8("Unknown Legacy Plugin");
 	}	
 }
 
-const char* LegacyPlugin::getDescription() const {
-	if (this->description) {
+QString LegacyPlugin::getDescription() const {
+	if (!this->description.isEmpty()) {
 		return this->description;
 	} else {
-		return "No description provided by the legacy plugin";
+		return QString::fromUtf8("No description provided by the legacy plugin");
 	}
 }
 
+bool LegacyPlugin::showAboutDialog(QWidget *parent) const {
+	if (this->mumPlugQt && this->mumPlugQt->about) {
+		this->mumPlugQt->about(parent);
+
+		return true;
+	}
+	if (this->mumPlug->about) {
+		// the original implementation in Mumble would pass nullptr to the about-function in the mumPlug struct
+		// so we'll mimic that behaviour for compatibility
+		this->mumPlug->about(nullptr);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool LegacyPlugin::showConfigDialog(QWidget *parent) const {
+	if (this->mumPlugQt && this->mumPlugQt->config) {
+		this->mumPlugQt->config(parent);
+
+		return true;
+	}
+	if (this->mumPlug->config) {
+		// the original implementation in Mumble would pass nullptr to the about-function in the mumPlug struct
+		// so we'll mimic that behaviour for compatibility
+		this->mumPlug->config(nullptr);
+
+		return true;
+	}
+
+	return false;
+}
 
 uint8_t LegacyPlugin::initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount) {
 	int retCode;
@@ -161,12 +184,12 @@ uint8_t LegacyPlugin::initPositionalData(const char **programNames, const uint64
 	}
 }
 
-bool LegacyPlugin::fetchPositionalData(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,
-		float *camera_axis, const char **context, const char **identity) {
+bool LegacyPlugin::fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
+		float *cameraAxis, const char **context, const char **identity) {
 	std::wstring identityWstr;
 	std::string contextStr;
 
-	int retCode = this->mumPlug->fetch(avatar_pos, avatar_front, avatar_axis, camera_pos, camera_front, camera_axis, contextStr, identityWstr);
+	int retCode = this->mumPlug->fetch(avatarPos, avatarDir, avatarAxis, cameraPos, cameraDir, cameraAxis, contextStr, identityWstr);
 
 	if (strcmp(contextStr.c_str(), this->context) != 0) {
 		// The context has changed -> delete the old one and replace it with the new one
@@ -191,4 +214,12 @@ bool LegacyPlugin::fetchPositionalData(float *avatar_pos, float *avatar_front, f
 
 void LegacyPlugin::shutdownPositionalData() {
 	this->mumPlug->unlock();
+}
+
+bool LegacyPlugin::providesAboutDialog() const {
+	return this->mumPlug->about || (this->mumPlugQt && this->mumPlugQt->about);
+}
+
+bool LegacyPlugin::providesConfigDialog() const {
+	return this->mumPlug->config || (this->mumPlugQt && this->mumPlugQt->config);
 }

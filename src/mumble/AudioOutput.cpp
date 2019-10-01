@@ -12,7 +12,7 @@
 #include "AudioOutputSpeech.h"
 #include "User.h"
 #include "Message.h"
-#include "Plugins.h"
+#include "PluginManager.h"
 #include "PacketDataStream.h"
 #include "ServerHandler.h"
 #include "Timer.h"
@@ -413,56 +413,45 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 		for (unsigned int i=0;i<iChannels;++i)
 			svol[i] = mul * fSpeakerVolume[i];
 
-		if (g.s.bPositionalAudio && (iChannels > 1) && g.p->fetch() && (g.bPosTest || g.p->fCameraPosition[0] != 0 || g.p->fCameraPosition[1] != 0 || g.p->fCameraPosition[2] != 0)) {
+		if (g.s.bPositionalAudio && (iChannels > 1) && g.pluginManager->fetchPositionalData()) {
 
-			float front[3] = { g.p->fCameraFront[0], g.p->fCameraFront[1], g.p->fCameraFront[2] };
-			float top[3] = { g.p->fCameraTop[0], g.p->fCameraTop[1], g.p->fCameraTop[2] };
+			Vector3D cameraDir = g.pluginManager->getPositionalData().getCameraDir();
+
+			Vector3D cameraAxis = g.pluginManager->getPositionalData().getCameraAxis();
 
 			// Front vector is dominant; if it's zero we presume all is zero.
 
-			float flen = sqrtf(front[0]*front[0]+front[1]*front[1]+front[2]*front[2]);
+			if (!cameraDir.isZero()) {
+				cameraDir.normalize();
 
-			if (flen > 0.0f) {
-				front[0] *= (1.0f / flen);
-				front[1] *= (1.0f / flen);
-				front[2] *= (1.0f / flen);
-
-				float tlen = sqrtf(top[0]*top[0]+top[1]*top[1]+top[2]*top[2]);
-
-				if (tlen > 0.0f) {
-					top[0] *= (1.0f / tlen);
-					top[1] *= (1.0f / tlen);
-					top[2] *= (1.0f / tlen);
+				if (!cameraAxis.isZero()) {
+					cameraAxis.normalize();
 				} else {
-					top[0] = 0.0f;
-					top[1] = 1.0f;
-					top[2] = 0.0f;
+					cameraAxis = { 0.0f, 1.0f, 0.0f };
 				}
 
-				if (std::abs(front[0] * top[0] + front[1] * top[1] + front[2] * top[2]) > 0.01f) {
+				if (std::abs(cameraDir.dotProduct(cameraAxis) > 0.01f)) {
 					// Not perpendicular. Assume Y up and rotate 90 degrees.
 
 					float azimuth = 0.0f;
-					if ((front[0] != 0.0f) || (front[2] != 0.0f))
-						azimuth = atan2f(front[2], front[0]);
-					float inclination = acosf(front[1]) - static_cast<float>(M_PI) / 2.0f;
+					if (cameraDir.x != 0.0f || cameraDir.z != 0.0f) {
+						azimuth = atan2f(cameraDir.z, cameraDir.x);
+					}
 
-					top[0] = sinf(inclination)*cosf(azimuth);
-					top[1] = cosf(inclination);
-					top[2] = sinf(inclination)*sinf(azimuth);
+					float inclination = acosf(cameraDir.y - static_cast<float>(M_PI) / 2.0f);
+
+					cameraDir.x = sinf(inclination) * cosf(azimuth);
+					cameraDir.y = cosf(inclination);
+					cameraDir.z = sinf(inclination) * sinf(azimuth);
 				}
 			} else {
-				front[0] = 0.0f;
-				front[1] = 0.0f;
-				front[2] = 1.0f;
+				cameraDir = { 0.0f, 0.0f, 1.0f };
 
-				top[0] = 0.0f;
-				top[1] = 1.0f;
-				top[2] = 0.0f;
+				cameraAxis = { 0.0f, 1.0f, 0.0f };
 			}
 
 			// Calculate right vector as front X top
-			float right[3] = {top[1]*front[2] - top[2]*front[1], top[2]*front[0] - top[0]*front[2], top[0]*front[1] - top[1] * front[0] };
+			Vector3D right = cameraDir.crossProduct(cameraAxis);
 
 			/*
 						qWarning("Front: %f %f %f", front[0], front[1], front[2]);
@@ -471,9 +460,9 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 			*/
 			// Rotate speakers to match orientation
 			for (unsigned int i=0;i<iChannels;++i) {
-				speaker[3*i+0] = fSpeakers[3*i+0] * right[0] + fSpeakers[3*i+1] * top[0] + fSpeakers[3*i+2] * front[0];
-				speaker[3*i+1] = fSpeakers[3*i+0] * right[1] + fSpeakers[3*i+1] * top[1] + fSpeakers[3*i+2] * front[1];
-				speaker[3*i+2] = fSpeakers[3*i+0] * right[2] + fSpeakers[3*i+1] * top[2] + fSpeakers[3*i+2] * front[2];
+				speaker[3*i+0] = fSpeakers[3*i+0] * right.x + fSpeakers[3*i+1] * cameraAxis.x + fSpeakers[3*i+2] * cameraDir.x;
+				speaker[3*i+1] = fSpeakers[3*i+0] * right.y + fSpeakers[3*i+1] * cameraAxis.y + fSpeakers[3*i+2] * cameraDir.y;
+				speaker[3*i+2] = fSpeakers[3*i+0] * right.z + fSpeakers[3*i+1] * cameraAxis.z + fSpeakers[3*i+2] * cameraDir.z;
 			}
 			validListener = true;
 		}
@@ -518,12 +507,18 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 			}
 
 			if (validListener && ((aop->fPos[0] != 0.0f) || (aop->fPos[1] != 0.0f) || (aop->fPos[2] != 0.0f))) {
-				float dir[3] = { aop->fPos[0] - g.p->fCameraPosition[0], aop->fPos[1] - g.p->fCameraPosition[1], aop->fPos[2] - g.p->fCameraPosition[2] };
-				float len = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+				Position3D outputPos = { aop->fPos[0], aop->fPos[1], aop->fPos[2]  };
+				Position3D ownPos = g.pluginManager->getPositionalData().getCameraPos();
+
+				Vector3D connectionVec = outputPos - ownPos;
+				float len = connectionVec.norm();
+
 				if (len > 0.0f) {
-					dir[0] /= len;
-					dir[1] /= len;
-					dir[2] /= len;
+
+					// don't use normalize-func in order to save the re-computation of the vector's length
+					connectionVec.x /= len;
+					connectionVec.y /= len;
+					connectionVec.z /= len;
 				}
 				/*
 								qWarning("Voice pos: %f %f %f", aop->fPos[0], aop->fPos[1], aop->fPos[2]);
@@ -535,7 +530,8 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 						aop->pfVolume[s] = -1.0;
 				}
 				for (unsigned int s=0;s<nchan;++s) {
-					const float dot = bSpeakerPositional[s] ? dir[0] * speaker[s*3+0] + dir[1] * speaker[s*3+1] + dir[2] * speaker[s*3+2] : 1.0f;
+					const float dot = bSpeakerPositional[s] ? connectionVec.x * speaker[s*3+0] + connectionVec.y * speaker[s*3+1]
+						+ connectionVec.z * speaker[s*3+2] : 1.0f;
 					const float str = svol[s] * calcGain(dot, len) * volumeAdjustment;
 					float * RESTRICT o = output + s;
 					const float old = (aop->pfVolume[s] >= 0.0f) ? aop->pfVolume[s] : str;

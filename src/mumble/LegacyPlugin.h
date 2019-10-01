@@ -8,6 +8,7 @@
 
 #include "Plugin.h"
 #include "../../plugins/mumble_plugin.h"
+#include <QtCore/QString>
 #include <string>
 
 class LegacyPlugin : public Plugin {
@@ -16,16 +17,9 @@ class LegacyPlugin : public Plugin {
 		Q_OBJECT
 		Q_DISABLE_COPY(LegacyPlugin)
 
-		MumbleError_t doInit();
-		void doShutdown();
-		const char* doGetName();
-		const char* doGetDescription();
-		Version_t doGetAPIVersion();
-		void doRegisterAPIFunctions(const MumbleAPI *api);
-
 	protected:
-		char *name;
-		char *description;
+		QString name;
+		QString description;
 		char *context;
 		char *identity;
 		std::wstring oldIdentity;
@@ -36,18 +30,24 @@ class LegacyPlugin : public Plugin {
 		virtual void resolveFunctionPointers() Q_DECL_OVERRIDE;
 		virtual bool doInitialize() Q_DECL_OVERRIDE;
 
-		LegacyPlugin(QString path, QObject *p = 0);
+		LegacyPlugin(QString path, bool isBuiltIn = false, QObject *p = 0);
 	public:
 		virtual ~LegacyPlugin() Q_DECL_OVERRIDE;
 
 		// functions for direct plugin-interaction
-		virtual const char* getName() const Q_DECL_OVERRIDE;
+		virtual QString getName() const Q_DECL_OVERRIDE;
 
-		virtual const char* getDescription() const Q_DECL_OVERRIDE;
+		virtual QString getDescription() const Q_DECL_OVERRIDE;
+		virtual bool showAboutDialog(QWidget *parent) const Q_DECL_OVERRIDE;
+		virtual bool showConfigDialog(QWidget *parent) const Q_DECL_OVERRIDE;
 		virtual uint8_t initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount) Q_DECL_OVERRIDE;
-		virtual bool fetchPositionalData(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,
-				float *camera_axis, const char **context, const char **identity) Q_DECL_OVERRIDE;
+		virtual bool fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
+				float *cameraAxis, const char **context, const char **identity) Q_DECL_OVERRIDE;
 		virtual void shutdownPositionalData() Q_DECL_OVERRIDE;
+
+		// functions for checking which underlying plugin functions are implemented
+		virtual bool providesAboutDialog() const Q_DECL_OVERRIDE;
+		virtual bool providesConfigDialog() const Q_DECL_OVERRIDE;
 };
 
 #endif

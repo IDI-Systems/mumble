@@ -10,11 +10,13 @@
 #include <QtCore/QMutex>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QUrl>
+#include <QtCore/QSharedPointer>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
 
 #include "ConfigDialog.h"
+#include "Plugin.h"
 
 #include "ui_Plugins.h"
 
@@ -26,7 +28,7 @@ class PluginConfig : public ConfigWidget, public Ui::PluginConfig {
 		Q_DISABLE_COPY(PluginConfig)
 	protected:
 		void refillPluginList();
-		PluginInfo *pluginForItem(QTreeWidgetItem *) const;
+		const QSharedPointer<const Plugin> pluginForItem(QTreeWidgetItem *) const;
 	public:
 		PluginConfig(Settings &st);
 		virtual QString title() const Q_DECL_OVERRIDE;
@@ -41,45 +43,5 @@ class PluginConfig : public ConfigWidget, public Ui::PluginConfig {
 };
 
 struct PluginFetchMeta;
-
-class Plugins : public QObject {
-		friend class PluginConfig;
-	private:
-		Q_OBJECT
-		Q_DISABLE_COPY(Plugins)
-	protected:
-		QReadWriteLock qrwlPlugins;
-		QMutex qmPluginStrings;
-		QList<PluginInfo *> qlPlugins;
-		PluginInfo *locked;
-		PluginInfo *prevlocked;
-		void clearPlugins();
-		int iPluginTry;
-		QMap<QString, PluginFetchMeta> qmPluginFetchMeta;
-		QString qsSystemPlugins;
-		QString qsUserPlugins;
-#ifdef Q_OS_WIN
-		HANDLE hToken;
-		TOKEN_PRIVILEGES tpPrevious;
-		DWORD cbPrevious;
-#endif
-	public:
-		std::string ssContext, ssContextSent;
-		std::wstring swsIdentity, swsIdentitySent;
-		bool bValid;
-		bool bUnlink;
-		float fPosition[3], fFront[3], fTop[3];
-		float fCameraPosition[3], fCameraFront[3], fCameraTop[3];
-
-		Plugins(QObject *p = NULL);
-		~Plugins() Q_DECL_OVERRIDE;
-	public slots:
-		void on_Timer_timeout();
-		void rescanPlugins();
-		bool fetch();
-		void checkUpdates();
-		void fetchedUpdatePAPlugins(QByteArray, QUrl);
-		void fetchedPAPluginDL(QByteArray, QUrl);
-};
 
 #endif

@@ -15,6 +15,8 @@
 #include "WebFetch.h"
 #include "MumbleApplication.h"
 #include "ManualPlugin.h"
+#include "PluginManager.h"
+#include <algorithm>
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -83,8 +85,6 @@ void PluginConfig::load(const Settings &r) {
 }
 
 void PluginConfig::save() const {
-	QReadLocker lock(&g.p->qrwlPlugins);
-
 	s.bTransmitPosition = qcbTransmit->isChecked();
 	s.qmPositionalAudioPlugins.clear();
 
@@ -92,112 +92,84 @@ void PluginConfig::save() const {
 	foreach(QTreeWidgetItem *i, list) {
 		bool enabled = (i->checkState(1) == Qt::Checked);
 
-		PluginInfo *pi = pluginForItem(i);
-		if (pi) {
-			s.qmPositionalAudioPlugins.insert(pi->filename, enabled);
-			pi->enabled = enabled;
+		const QSharedPointer<const Plugin> plugin = pluginForItem(i);
+		if (plugin) {
+			s.qmPositionalAudioPlugins.insert(plugin->getFilePath(), enabled);
+			g.pluginManager->enablePositionalDataFor(plugin, enabled);
 		}
 	}
 }
 
-PluginInfo *PluginConfig::pluginForItem(QTreeWidgetItem *i) const {
+const QSharedPointer<const Plugin> PluginConfig::pluginForItem(QTreeWidgetItem *i) const {
 	if (i) {
-		foreach(PluginInfo *pi, g.p->qlPlugins) {
-			if (pi->filename == i->data(0, Qt::UserRole).toString())
-				return pi;
-		}
+		return g.pluginManager->getPlugin(i->data(0, Qt::UserRole).toUInt());
 	}
-	return NULL;
+
+	return nullptr;
 }
 
 void PluginConfig::on_qpbConfig_clicked() {
-	PluginInfo *pi;
-	{
-		QReadLocker lock(&g.p->qrwlPlugins);
-		pi = pluginForItem(qtwPlugins->currentItem());
-	}
+	const QSharedPointer<const Plugin> plugin = pluginForItem(qtwPlugins->currentItem());
 
-	if (! pi)
-		return;
-
-	if (pi->pqt && pi->pqt->config) {
-		pi->pqt->config(this);
-	} else if (pi->p->config) {
-		pi->p->config(0);
-	} else {
-		QMessageBox::information(this, QLatin1String("Mumble"), tr("Plugin has no configure function."), QMessageBox::Ok, QMessageBox::NoButton);
+	if (plugin) {
+		if (!plugin->showConfigDialog(this)) {
+			// if the plugin doesn't support showing such a dialog, we'll show a default one
+			QMessageBox::information(this, QLatin1String("Mumble"), tr("Plugin has no configure function."), QMessageBox::Ok, QMessageBox::NoButton);
+		}
 	}
 }
 
 void PluginConfig::on_qpbAbout_clicked() {
-	PluginInfo *pi;
-	{
-		QReadLocker lock(&g.p->qrwlPlugins);
-		pi = pluginForItem(qtwPlugins->currentItem());
-	}
+	const QSharedPointer<const Plugin> plugin = pluginForItem(qtwPlugins->currentItem());
 
-	if (! pi)
-		return;
-
-	if (pi->pqt && pi->pqt->about) {
-		pi->pqt->about(this);
-	} else if (pi->p->about) {
-		pi->p->about(0);
-	} else {
-		QMessageBox::information(this, QLatin1String("Mumble"), tr("Plugin has no about function."), QMessageBox::Ok, QMessageBox::NoButton);
+	if (plugin) {
+		if (!plugin->showAboutDialog(this)) {
+			// if the plugin doesn't support showing such a dialog, we'll show a default one
+			QMessageBox::information(this, QLatin1String("Mumble"), tr("Plugin has no about function."), QMessageBox::Ok, QMessageBox::NoButton);
+		}
 	}
 }
 
 void PluginConfig::on_qpbReload_clicked() {
-	g.p->rescanPlugins();
+	g.pluginManager->rescanPlugins();
 	refillPluginList();
 }
 
 void PluginConfig::refillPluginList() {
-	QReadLocker lock(&g.p->qrwlPlugins);
 	qtwPlugins->clear();
 
-	foreach(PluginInfo *pi, g.p->qlPlugins) {
+	// get plugins already sorted according to their name
+	const QVector<QSharedPointer<const Plugin> > plugins = g.pluginManager->getPlugins(true);
+
+	foreach(const QSharedPointer<const Plugin> currentPlugin, plugins) {
 		QTreeWidgetItem *i = new QTreeWidgetItem(qtwPlugins);
 		i->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-		i->setCheckState(1, pi->enabled ? Qt::Checked : Qt::Unchecked);
-		i->setText(0, pi->description);
-		if (pi->p->longdesc)
-			i->setToolTip(0, Qt::escape(QString::fromStdWString(pi->p->longdesc())));
-		i->setData(0, Qt::UserRole, pi->filename);
+		// i->setCheckState(1, pi->enabled ? Qt::Checked : Qt::Unchecked);
+		// TODO: introduce concept of enabled plugins
+		i->setCheckState(1, Qt::Unchecked);
+		i->setText(0, currentPlugin->getName());
+		i->setToolTip(0, currentPlugin->getDescription().toHtmlEscaped());
+		i->setData(0, Qt::UserRole, currentPlugin->getID());
 	}
+
 	qtwPlugins->setCurrentItem(qtwPlugins->topLevelItem(0));
 	on_qtwPlugins_currentItemChanged(qtwPlugins->topLevelItem(0), NULL);
 }
 
 void PluginConfig::on_qtwPlugins_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *) {
-	QReadLocker lock(&g.p->qrwlPlugins);
+	const QSharedPointer<const Plugin> plugin = pluginForItem(current);
 
-	PluginInfo *pi=pluginForItem(current);
-	if (pi) {
-		bool showAbout = false;
-		if (pi->p->about) {
-			showAbout = true;
-		}
-		if (pi->pqt && pi->pqt->about) {
-			showAbout = true;
-		}
-		qpbAbout->setEnabled(showAbout);
+	if (plugin) {
+		qpbAbout->setEnabled(plugin->providesAboutDialog());
 
-		bool showConfig = false;
-		if (pi->p->config) {
-			showConfig = true;
-		}
-		if (pi->pqt && pi->pqt->config) {
-			showConfig = true;
-		}
-		qpbConfig->setEnabled(showConfig);
+		qpbConfig->setEnabled(plugin->providesConfigDialog());
 	} else {
 		qpbAbout->setEnabled(false);
 		qpbConfig->setEnabled(false);
 	}
 }
 
+/*
 Plugins::Plugins(QObject *p) : QObject(p) {
 	QTimer *timer=new QTimer(this);
 	timer->setObjectName(QLatin1String("Timer"));
@@ -772,3 +744,4 @@ void Plugins::fetchedPAPluginDL(QByteArray data, QUrl url) {
 	if (rescan)
 		rescanPlugins();
 }
+*/

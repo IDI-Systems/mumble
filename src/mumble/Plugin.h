@@ -17,38 +17,38 @@
 /// A struct for holding the function pointers to the functions inside the plugin's library
 /// For the documentation of those functions, see the plugin's header file (the one used when developing a plugin)
 struct PluginAPIFunctions {
-		MumbleError_t (*init)();
-		void          (*shutdown)();
-		const char*   (*getName)();
-		Version_t     (*getAPIVersion)();
-		void          (*registerAPIFunctions)(const MumbleAPI *api);
+		MumbleError_t (PLUGIN_CALLING_CONVENTION *init)();
+		void          (PLUGIN_CALLING_CONVENTION *shutdown)();
+		const char*   (PLUGIN_CALLING_CONVENTION *getName)();
+		Version_t     (PLUGIN_CALLING_CONVENTION *getAPIVersion)();
+		void          (PLUGIN_CALLING_CONVENTION *registerAPIFunctions)(const MumbleAPI *api);
 
 		// Further utility functions the plugin may implement
-		void          (*setMumbleInfo)(Version_t mumbleVersion, Version_t mumbleAPIVersion, Version_t minimalExpectedAPIVersion);
-		Version_t     (*getVersion)();
-		const char*   (*getAuthor)();
-		const char*   (*getDescription)();
-		void          (*registerPluginID)(uint32_t id);
-		uint32_t      (*getPluginFeatures)();
-		uint32_t      (*deactivateFeatures)(uint32_t features);
+		void          (PLUGIN_CALLING_CONVENTION *setMumbleInfo)(Version_t mumbleVersion, Version_t mumbleAPIVersion, Version_t minimalExpectedAPIVersion);
+		Version_t     (PLUGIN_CALLING_CONVENTION *getVersion)();
+		const char*   (PLUGIN_CALLING_CONVENTION *getAuthor)();
+		const char*   (PLUGIN_CALLING_CONVENTION *getDescription)();
+		void          (PLUGIN_CALLING_CONVENTION *registerPluginID)(uint32_t id);
+		uint32_t      (PLUGIN_CALLING_CONVENTION *getPluginFeatures)();
+		uint32_t      (PLUGIN_CALLING_CONVENTION *deactivateFeatures)(uint32_t features);
 
 		// Functions for dealing with positional audio (or rather the fetching of the needed data)
-		uint8_t       (*initPositionalData)(const char **programNames, const uint64_t *programPIDs, size_t programCount);
-		bool          (*fetchPositionalData)(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,
-											float *camera_axis, const char **context, const char **identity);
-		void          (*shutdownPositionalData)();
+		uint8_t       (PLUGIN_CALLING_CONVENTION *initPositionalData)(const char **programNames, const uint64_t *programPIDs, size_t programCount);
+		bool          (PLUGIN_CALLING_CONVENTION *fetchPositionalData)(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
+											float *cameraAxis, const char **context, const char **identity);
+		void          (PLUGIN_CALLING_CONVENTION *shutdownPositionalData)();
 		
 		// Callback functions and EventHandlers
-		void          (*onServerConnected)(MumbleConnection_t connection);
-		void          (*onServerDisconnected)(MumbleConnection_t connection);
-		void          (*onChannelEntered)(MumbleConnection_t connection, MumbleUserID_t userID, MumbleChannelID_t previousChannelID, MumbleChannelID_t newChannelID);
-		void          (*onChannelExited)(MumbleConnection_t connection, MumbleUserID_t userID, MumbleChannelID_t channelID);
-		void          (*onUserTalkingStateChanged)(MumbleConnection_t connection, MumbleUserID_t userID, TalkingState_t talkingState);
-		bool          (*onReceiveData)(MumbleConnection_t connection, MumbleUserID_t sender, const char *data, size_t dataLength, const char *dataID);
-		bool          (*onAudioInput)(short *inputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
-		bool          (*onAudioSourceFetched)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
-		bool          (*onAudioSourceProcessed)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
-		bool          (*onAudioOutputAboutToPlay)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
+		void          (PLUGIN_CALLING_CONVENTION *onServerConnected)(MumbleConnection_t connection);
+		void          (PLUGIN_CALLING_CONVENTION *onServerDisconnected)(MumbleConnection_t connection);
+		void          (PLUGIN_CALLING_CONVENTION *onChannelEntered)(MumbleConnection_t connection, MumbleUserID_t userID, MumbleChannelID_t previousChannelID, MumbleChannelID_t newChannelID);
+		void          (PLUGIN_CALLING_CONVENTION *onChannelExited)(MumbleConnection_t connection, MumbleUserID_t userID, MumbleChannelID_t channelID);
+		void          (PLUGIN_CALLING_CONVENTION *onUserTalkingStateChanged)(MumbleConnection_t connection, MumbleUserID_t userID, TalkingState_t talkingState);
+		bool          (PLUGIN_CALLING_CONVENTION *onReceiveData)(MumbleConnection_t connection, MumbleUserID_t sender, const char *data, size_t dataLength, const char *dataID);
+		bool          (PLUGIN_CALLING_CONVENTION *onAudioInput)(short *inputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
+		bool          (PLUGIN_CALLING_CONVENTION *onAudioSourceFetched)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
+		bool          (PLUGIN_CALLING_CONVENTION *onAudioSourceProcessed)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
+		bool          (PLUGIN_CALLING_CONVENTION *onAudioOutputAboutToPlay)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
 };
 
 
@@ -74,7 +74,7 @@ class Plugin : public QObject {
 		static QMutex idLock;
 		static uint32_t nextID;
 
-		Plugin(QString path, QObject *p = nullptr);
+		Plugin(QString path, bool isBuiltIn = false, QObject *p = nullptr);
 
 		bool pluginIsValid;
 		QLibrary lib;
@@ -83,6 +83,7 @@ class Plugin : public QObject {
 		bool pluginIsLoaded;
 		mutable QReadWriteLock pluginLock;
 		PluginAPIFunctions apiFnc;
+		bool isBuiltIn;
 
 		virtual bool doInitialize();
 		virtual void resolveFunctionPointers();
@@ -91,6 +92,9 @@ class Plugin : public QObject {
 		virtual ~Plugin() Q_DECL_OVERRIDE;
 		virtual bool isValid() const;
 		virtual bool isLoaded() const Q_DECL_FINAL;
+		virtual uint32_t getID() const Q_DECL_FINAL;
+		virtual bool isBuiltInPlugin() const Q_DECL_FINAL;
+		virtual QString getFilePath() const;
 
 		// template for a factory-method which is needed to ensure that every Plugin object will always
 		// be initialized be the right call to its init() functions (if overwritten by a child-class, then
@@ -115,20 +119,22 @@ class Plugin : public QObject {
 		// functions for direct plugin-interaction
 		virtual MumbleError_t init();
 		virtual void shutdown();
-		virtual const char* getName() const;
+		virtual QString getName() const;
 		virtual Version_t getAPIVersion() const;
 		virtual void registerAPIFunctions(const MumbleAPI *api);
 
 		virtual void setMumbleInfo(Version_t mumbleVersion, Version_t mumbleAPIVersion, Version_t minimalExpectedAPIVersion);
 		virtual Version_t getVersion() const;
-		virtual const char* getAuthor() const;
-		virtual const char* getDescription() const;
+		virtual QString getAuthor() const;
+		virtual QString getDescription() const;
 		virtual void registerPluginID(uint32_t id);
 		virtual uint32_t getPluginFeatures() const;
 		virtual uint32_t deactivateFeatures(uint32_t features);
+		virtual bool showAboutDialog(QWidget *parent) const;
+		virtual bool showConfigDialog(QWidget *parent) const;
 		virtual uint8_t initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount);
-		virtual bool fetchPositionalData(float *avatar_pos, float *avatar_front, float *avatar_axis, float *camera_pos, float *camera_front,
-				float *camera_axis, const char **context, const char **identity);
+		virtual bool fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
+				float *cameraAxis, const char **context, const char **identity);
 		virtual void shutdownPositionalData();
 		virtual void onServerConnected(MumbleConnection_t connection);
 		virtual void onServerDisconnected(MumbleConnection_t connection);
@@ -141,6 +147,10 @@ class Plugin : public QObject {
 		virtual bool onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
 		virtual bool onAudioSourceProcessed(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
 		virtual bool onAudioOutputAboutToPlay(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
+
+		// functions for checking which underlying plugin functions are implemented
+		virtual bool providesAboutDialog() const;
+		virtual bool providesConfigDialog() const;
 };
 
 #endif

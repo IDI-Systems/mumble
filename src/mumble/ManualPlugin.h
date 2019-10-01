@@ -18,6 +18,7 @@
 #endif
 
 #include "ui_ManualPlugin.h"
+#include "LegacyPlugin.h"
 
 #include "../../plugins/mumble_plugin.h"
 
@@ -51,5 +52,19 @@ class Manual : public QDialog, public Ui::Manual {
 
 MumblePlugin *ManualPlugin_getMumblePlugin();
 MumblePluginQt *ManualPlugin_getMumblePluginQt();
+
+class ManualPlugin : public LegacyPlugin {
+	friend class Plugin; // needed in order for Plugin::createNew to access LegacyPlugin::doInitialize()
+	private:
+		Q_OBJECT
+		Q_DISABLE_COPY(ManualPlugin)
+	
+	protected:
+		virtual void resolveFunctionPointers() Q_DECL_OVERRIDE;
+		ManualPlugin(QObject *p = 0);
+	
+	public:
+		virtual ~ManualPlugin() Q_DECL_OVERRIDE;
+};
 
 #endif
