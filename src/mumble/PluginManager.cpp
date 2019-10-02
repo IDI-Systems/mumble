@@ -256,7 +256,7 @@ void PluginManager::rescanPlugins() {
 const QSharedPointer<const Plugin> PluginManager::getPlugin(uint32_t pluginID) const {
 	QReadLocker lock(&this->pluginCollectionLock);
 	
-	return this->pluginHashMap.value(pluginID, nullptr);
+	return this->pluginHashMap.value(pluginID);
 }
 
 void PluginManager::checkForPluginUpdates() const {
