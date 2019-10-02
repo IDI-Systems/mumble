@@ -224,6 +224,7 @@ void PluginManager::rescanPlugins() {
 				// if this code block is reached, the plugin was instantiated successfully so we can add it to the map
 				pluginHashMap.insert(p->getID(), p);
 			} catch(const PluginError& e) {
+				Q_UNUSED(e);
 				// If an exception is thrown, this library does not represent a proper plugin
 				// Check if it might be a legacy plugin instead
 				try {
@@ -234,6 +235,7 @@ void PluginManager::rescanPlugins() {
 #endif
 					pluginHashMap.insert(lp->getID(), lp);
 				} catch(const PluginError& e) {
+					Q_UNUSED(e);
 					qWarning() << "Non-plugin library in plugin directory:" << currentInfo.absoluteFilePath();
 				}
 			}
