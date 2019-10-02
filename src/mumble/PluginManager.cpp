@@ -268,6 +268,18 @@ void PluginManager::checkForPluginUpdates() const {
 }
 
 bool PluginManager::fetchPositionalData() {
+	if (g.bPosTest) {
+		// This is for testing-purposes only so the "fetched" position doesn't have any real meaning
+		this->positionalData.reset();
+
+		this->positionalData.playerDir.z = 1.0f;
+		this->positionalData.playerAxis.y = 1.0f;
+		this->positionalData.cameraDir.z = 1.0f;
+		this->positionalData.cameraAxis.y = 1.0f;
+
+		return true;
+	}
+
 	QReadLocker activePluginLock(&this->activePosDataPluginLock);
 
 	if (!this->activePositionalDataPlugin) {
