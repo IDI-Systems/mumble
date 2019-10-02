@@ -27,6 +27,10 @@ class Vector3D {
 		Vector3D operator+(const Vector3D& other) const;
 		Vector3D& operator=(const Vector3D& other) = default;
 
+		// allow explicit conversions from this struct to a float-array / float-pointer
+		explicit operator const float*() const { return &x; };
+		explicit operator float*() { return &x; };
+
 		Vector3D();
 		Vector3D(float x, float y, float z);
 		Vector3D(const Vector3D& other);
@@ -40,7 +44,11 @@ class Vector3D {
 		void normalize();
 };
 
-// create an alias for Position3D as it can also represent a vector
+// As we're casting the vector struct to float-arrays, we have to make sure that the compiler won't introduce any padding
+// into the structure
+static_assert(sizeof(Vector3D) == 3*sizeof(float), "The compiler added padding to the Vector3D structure so it can't be cast to a float-array!");
+
+// create an alias for Vector3D as it can also represent a position
 typedef Vector3D Position3D;
 
 class PositionalData {
