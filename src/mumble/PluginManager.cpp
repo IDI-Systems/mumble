@@ -141,7 +141,13 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 	QReadLocker pluginLock(&this->pluginCollectionLock);
 	QWriteLocker activePluginLock(&this->activePosDataPluginLock);
 
-	QHash<uint32_t, QSharedPointer<Plugin>>::iterator it = this->pluginHashMap.begin();
+	if (!g.s.bTransmitPosition) {
+		// According to the settings the position shall not be transmitted meaning that we don't have to select any plugin
+		// for positional data
+		this->activePositionalDataPlugin = QSharedPointer<Plugin>();
+
+		return false;
+	}
 
 	// gather PIDs and names of currently running programs
 	QMultiMap<QString, unsigned long long int> pidMap;
@@ -160,6 +166,8 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 		pidIter++;
 		index++;
 	}
+
+	QHash<uint32_t, QSharedPointer<Plugin>>::iterator it = this->pluginHashMap.begin();
 
 	// We assume that there is only one (enabled) plugin for the currently played game so we don't have to remember
 	// which plugin was active last
