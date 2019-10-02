@@ -251,10 +251,12 @@ uint32_t Plugin::deactivateFeatures(uint32_t features) {
 }
 
 bool Plugin::showAboutDialog(QWidget *parent) const {
+	Q_UNUSED(parent);
 	return false;
 }
 
 bool Plugin::showConfigDialog(QWidget *parent) const {
+	Q_UNUSED(parent);
 	return false;
 }
 
