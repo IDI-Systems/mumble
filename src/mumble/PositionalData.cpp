@@ -108,6 +108,12 @@ void Vector3D::normalize() {
 	this->z /= len;
 }
 
+void Vector3D::toZero() {
+	this->x = 0.0f;
+	this->y = 0.0f;
+	this->z = 0.0f;
+}
+
 PositionalData::PositionalData() : playerPos(), playerDir(), playerAxis(), cameraPos(), cameraDir(), cameraAxis(),
 	context(), identity(), lock(QReadWriteLock::Recursive) {
 }
@@ -204,4 +210,15 @@ QString PositionalData::getContext() const {
 	QReadLocker lock(&this->lock);
 
 	return this->context;
+}
+
+void PositionalData::reset() {
+	this->playerPos.toZero();
+	this->playerDir.toZero();
+	this->playerAxis.toZero();
+	this->cameraPos.toZero();
+	this->cameraDir.toZero();
+	this->cameraAxis.toZero();
+	this->context = QString();
+	this->identity = QString();
 }

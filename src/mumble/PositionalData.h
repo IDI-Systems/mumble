@@ -42,6 +42,7 @@ class Vector3D {
 		bool equals(const Vector3D& other, float threshold = 0.0f) const;
 		bool isZero(float threshold = 0.0f) const;
 		void normalize();
+		void toZero();
 };
 
 // As we're casting the vector struct to float-arrays, we have to make sure that the compiler won't introduce any padding
@@ -82,6 +83,7 @@ class PositionalData {
 		Vector3D getCameraAxis() const;
 		QString getPlayerIdentity() const;
 		QString getContext() const;
+		void reset();
 };
 
 #endif

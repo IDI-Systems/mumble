@@ -280,7 +280,6 @@ uint8_t Plugin::initPositionalData(const char **programNames, const uint64_t *pr
 	}
 }
 
-#define SET_TO_ZERO_3D(vec) vec.x = 0.0f; vec.y = 0.0f; vec.z = 0.0f;
 bool Plugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
 		Vector3D& cameraAxis, QString& context, QString& identity) {
 	if (this->apiFnc.fetchPositionalData) {
@@ -296,19 +295,18 @@ bool Plugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vec
 
 		return retStatus;
 	} else {
-		SET_TO_ZERO_3D(avatarPos);
-		SET_TO_ZERO_3D(avatarDir);
-		SET_TO_ZERO_3D(avatarAxis);
-		SET_TO_ZERO_3D(cameraPos);
-		SET_TO_ZERO_3D(cameraDir);
-		SET_TO_ZERO_3D(cameraAxis);
+		avatarPos.toZero();
+		avatarDir.toZero();
+		avatarAxis.toZero();
+		cameraPos.toZero();
+		cameraDir.toZero();
+		cameraAxis.toZero();
 		context = QString();
 		identity = QString();
 		
 		return false;
 	}
 }
-#undef SET_TO_ZERO_3D
 
 void Plugin::shutdownPositionalData() {
 	if (this->apiFnc.shutdownPositionalData) {
