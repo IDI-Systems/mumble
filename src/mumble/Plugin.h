@@ -7,6 +7,7 @@
 #define MUMBLE_MUMBLE_PLUGIN_H_
 
 #include "PluginComponents.h"
+#include "PositionalData.h"
 #include <QtCore/QObject>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QString>
@@ -133,8 +134,8 @@ class Plugin : public QObject {
 		virtual bool showAboutDialog(QWidget *parent) const;
 		virtual bool showConfigDialog(QWidget *parent) const;
 		virtual uint8_t initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount);
-		virtual bool fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
-				float *cameraAxis, const char **context, const char **identity);
+		virtual bool fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
+				Vector3D& cameraAxis, QString& context, QString& identity);
 		virtual void shutdownPositionalData();
 		virtual void onServerConnected(MumbleConnection_t connection);
 		virtual void onServerDisconnected(MumbleConnection_t connection);

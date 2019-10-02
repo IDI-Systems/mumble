@@ -20,9 +20,6 @@ class LegacyPlugin : public Plugin {
 	protected:
 		QString name;
 		QString description;
-		char *context;
-		char *identity;
-		std::wstring oldIdentity;
 		MumblePlugin *mumPlug;
 		MumblePlugin2 *mumPlug2;
 		MumblePluginQt *mumPlugQt;
@@ -41,8 +38,8 @@ class LegacyPlugin : public Plugin {
 		virtual bool showAboutDialog(QWidget *parent) const Q_DECL_OVERRIDE;
 		virtual bool showConfigDialog(QWidget *parent) const Q_DECL_OVERRIDE;
 		virtual uint8_t initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount) Q_DECL_OVERRIDE;
-		virtual bool fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
-				float *cameraAxis, const char **context, const char **identity) Q_DECL_OVERRIDE;
+		virtual bool fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
+				Vector3D& cameraAxis, QString& context, QString& identity) Q_DECL_OVERRIDE;
 		virtual void shutdownPositionalData() Q_DECL_OVERRIDE;
 
 		// functions for checking which underlying plugin functions are implemented

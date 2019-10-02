@@ -268,11 +268,21 @@ uint8_t Plugin::initPositionalData(const char **programNames, const uint64_t *pr
 	}
 }
 
-#define SET_TO_ZERO_3D(arr) arr[0] = 0.0f; arr[1] = 0.0f; arr[2] = 0.0f;
-bool Plugin::fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
-		float *cameraAxis, const char **context, const char **identity) {
+#define SET_TO_ZERO_3D(vec) vec.x = 0.0f; vec.y = 0.0f; vec.z = 0.0f;
+bool Plugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
+		Vector3D& cameraAxis, QString& context, QString& identity) {
 	if (this->apiFnc.fetchPositionalData) {
-		return this->fetchPositionalData(avatarPos, avatarDir, avatarAxis, cameraPos, cameraDir, cameraAxis, context, identity);
+		const char **contextPtr;
+		const char **identityPtr;
+
+		bool retStatus = this->apiFnc.fetchPositionalData(static_cast<float*>(avatarPos), static_cast<float*>(avatarDir),
+				static_cast<float*>(avatarAxis), static_cast<float*>(cameraPos), static_cast<float*>(cameraDir), static_cast<float*>(cameraAxis),
+					contextPtr, identityPtr);
+
+		context = QString::fromUtf8(*contextPtr);
+		identity = QString::fromUtf8(*identityPtr);
+
+		return retStatus;
 	} else {
 		SET_TO_ZERO_3D(avatarPos);
 		SET_TO_ZERO_3D(avatarDir);
@@ -280,8 +290,8 @@ bool Plugin::fetchPositionalData(float *avatarPos, float *avatarDir, float *avat
 		SET_TO_ZERO_3D(cameraPos);
 		SET_TO_ZERO_3D(cameraDir);
 		SET_TO_ZERO_3D(cameraAxis);
-		context = nullptr;
-		identity = nullptr;
+		context = QString();
+		identity = QString();
 		
 		return false;
 	}

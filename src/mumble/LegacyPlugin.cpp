@@ -11,31 +11,11 @@
 #include <codecvt>
 #include <locale>
 
-/// This function converts a wide-string (wstring) to its multibyte-representation by allocating a new
-/// char-buffer on the heap and writing to the representation to it.
-///
-/// @param wStr The reference to the wstring that shall be converted
-/// @returns A pointer to the converted representationÄ's char-buffer. This pointer needs to be deleted by the caller
-char* convertWString(const std::wstring& wStr) {
-	// +1 for the terminating null-byte
-	size_t size = std::wcslen(wStr.c_str()) + 1;
-
-	char* buffer = new char[size];
-
-	std::wcstombs(buffer, wStr.c_str(), size);
-
-	buffer[size-1] = '\0';
-
-	return buffer;
-}
-
-LegacyPlugin::LegacyPlugin(QString path, bool isBuiltIn, QObject *p) : Plugin(path, isBuiltIn, p), name(), description(), context(0), identity(0),
-	oldIdentity(), mumPlug(0), mumPlug2(0), mumPlugQt(0) {
+LegacyPlugin::LegacyPlugin(QString path, bool isBuiltIn, QObject *p) : Plugin(path, isBuiltIn, p), name(), description(), mumPlug(0),
+	mumPlug2(0), mumPlugQt(0) {
 }
 
 LegacyPlugin::~LegacyPlugin() {
-	delete context;
-	delete identity;
 }
 
 bool LegacyPlugin::doInitialize() {
@@ -184,28 +164,16 @@ uint8_t LegacyPlugin::initPositionalData(const char **programNames, const uint64
 	}
 }
 
-bool LegacyPlugin::fetchPositionalData(float *avatarPos, float *avatarDir, float *avatarAxis, float *cameraPos, float *cameraDir,
-		float *cameraAxis, const char **context, const char **identity) {
+bool LegacyPlugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
+		Vector3D& cameraAxis, QString& context, QString& identity) {
 	std::wstring identityWstr;
 	std::string contextStr;
 
-	int retCode = this->mumPlug->fetch(avatarPos, avatarDir, avatarAxis, cameraPos, cameraDir, cameraAxis, contextStr, identityWstr);
+	int retCode = this->mumPlug->fetch(static_cast<float*>(avatarPos), static_cast<float*>(avatarDir), static_cast<float*>(avatarAxis),
+			static_cast<float*>(cameraPos), static_cast<float*>(cameraDir), static_cast<float*>(cameraAxis), contextStr, identityWstr);
 
-	if (strcmp(contextStr.c_str(), this->context) != 0) {
-		// The context has changed -> delete the old one and replace it with the new one
-		delete this->context;
-		this->context = new char[contextStr.size() + 1];
-		strcpy(this->context, contextStr.c_str());
-		this->context[contextStr.size()] = '\0';
-	}
-	*context = this->context;
-
-	if (oldIdentity != identityWstr) {
-		// The identity has changed -> delete the old one and replace it with the new one
-		delete this->identity;
-		this->identity = convertWString(identityWstr);
-	}
-	*identity = this->identity;
+	context = QString::fromStdString(contextStr);
+	identity = QString::fromStdWString(identityWstr);
 
 	// The fetch-function should return if it is "still locked on" meaning that it can continue providing
 	// positional audio
