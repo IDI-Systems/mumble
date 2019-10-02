@@ -19,17 +19,8 @@
 #include <QtCore/QLibrary>
 #include <QtCore/QUrlQuery>
 
-#ifdef Q_OS_WIN
-# include <QtCore/QTemporaryFile>
-#endif
-
 #include <QtWidgets/QMessageBox>
 #include <QtXml/QDomDocument>
-
-#ifdef Q_OS_WIN
-# include <softpub.h>
-# include <tlhelp32.h>
-#endif
 
 #include <algorithm>
 
