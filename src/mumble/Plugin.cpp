@@ -283,15 +283,15 @@ uint8_t Plugin::initPositionalData(const char **programNames, const uint64_t *pr
 bool Plugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
 		Vector3D& cameraAxis, QString& context, QString& identity) {
 	if (this->apiFnc.fetchPositionalData) {
-		const char **contextPtr;
-		const char **identityPtr;
+		const char *contextPtr = "";
+		const char *identityPtr = "";
 
 		bool retStatus = this->apiFnc.fetchPositionalData(static_cast<float*>(avatarPos), static_cast<float*>(avatarDir),
 				static_cast<float*>(avatarAxis), static_cast<float*>(cameraPos), static_cast<float*>(cameraDir), static_cast<float*>(cameraAxis),
-					contextPtr, identityPtr);
+					&contextPtr, &identityPtr);
 
-		context = QString::fromUtf8(*contextPtr);
-		identity = QString::fromUtf8(*identityPtr);
+		context = QString::fromUtf8(contextPtr);
+		identity = QString::fromUtf8(identityPtr);
 
 		return retStatus;
 	} else {
