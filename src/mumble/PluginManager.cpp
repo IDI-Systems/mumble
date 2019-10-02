@@ -305,7 +305,15 @@ bool PluginManager::fetchPositionalData() {
 }
 
 void PluginManager::unlinkPositionalData() {
-	// TODO
+	QWriteLocker lock(&this->activePosDataPluginLock);
+
+	if (this->activePositionalDataPlugin) {
+		// Shut the plugin down
+		this->activePositionalDataPlugin->shutdown();
+
+		// Set the pointer to NULL
+		this->activePositionalDataPlugin = QSharedPointer<Plugin>();
+	}
 }
 
 bool PluginManager::isPositionalDataAvailable() const {
