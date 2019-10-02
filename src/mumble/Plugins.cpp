@@ -110,7 +110,7 @@ void PluginConfig::save() const {
 		const QSharedPointer<const Plugin> plugin = pluginForItem(i);
 		if (plugin) {
 			s.qmPositionalAudioPlugins.insert(plugin->getFilePath(), enabled);
-			g.pluginManager->enablePositionalDataFor(plugin, enabled);
+			g.pluginManager->enablePositionalDataFor(plugin->getID(), enabled);
 		}
 	}
 }

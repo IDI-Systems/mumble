@@ -326,8 +326,14 @@ const PositionalData& PluginManager::getPositionalData() const {
 	return this->positionalData;
 }
 
-void PluginManager::enablePositionalDataFor(const QSharedPointer<const Plugin>& plugin, bool enable) const {
-	// TODO
+void PluginManager::enablePositionalDataFor(uint32_t pluginID, bool enable) const {
+	QReadLocker lock(&this->pluginCollectionLock);
+
+	QSharedPointer<Plugin> plugin = this->pluginHashMap.value(pluginID);
+
+	if (plugin) {
+		plugin->enablePositionalData(enable);
+	}
 }
 
 const QVector<QSharedPointer<const Plugin> > PluginManager::getPlugins(bool sorted) const {

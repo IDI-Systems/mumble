@@ -70,7 +70,7 @@ class PluginManager : public QObject {
 		void unlinkPositionalData();
 		bool isPositionalDataAvailable() const;
 		const PositionalData& getPositionalData() const;
-		void enablePositionalDataFor(const QSharedPointer<const Plugin>& plugin, bool enable = true) const;
+		void enablePositionalDataFor(uint32_t pluginID, bool enable = true) const;
 		const QVector<QSharedPointer<const Plugin> > getPlugins(bool sorted = false) const;
 
 		// functions for accessing the PA context. The context itself is not publicly exposed in order to guarantee
