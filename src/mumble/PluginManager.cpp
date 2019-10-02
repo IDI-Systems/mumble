@@ -343,7 +343,7 @@ const QVector<QSharedPointer<const Plugin> > PluginManager::getPlugins(bool sort
 
 	QHash<uint32_t, QSharedPointer<Plugin>>::const_iterator it = this->pluginHashMap.constBegin();
 	if (sorted) {
-		QList ids = this->pluginHashMap.keys();
+		QList<uint32_t> ids = this->pluginHashMap.keys();
 
 		// sort keys so that the corresponding Plugins are in alphabetical order based on their name
 		std::sort(ids.begin(), ids.end(), [this](uint32_t first, uint32_t second) {
