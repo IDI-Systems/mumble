@@ -11,6 +11,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfoList>
 #include <QtCore/QFileInfo>
+#include <QtCore/QScopedArrayPointer>
 
 #include "ManualPlugin.h"
 
@@ -146,8 +147,8 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 	QMultiMap<QString, unsigned long long int> pidMap;
 	getProgramPIDs(pidMap);
 
-	const char* names[pidMap.size()];
-	uint64_t pids[pidMap.size()];
+	QScopedArrayPointer<const char*> names(new const char*[pidMap.size()]);
+	QScopedArrayPointer<uint64_t> pids(new uint64_t[pidMap.size()]);
 
 	unsigned int index = 0;
 	// split the MultiMap into the two arrays
@@ -166,10 +167,11 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 		QSharedPointer<Plugin> currentPlugin = it.value();
 
 		if (currentPlugin->isPositionalDataEnabled()) {
-			switch(currentPlugin->initPositionalData(names, pids, pidMap.size())) {
+			switch(currentPlugin->initPositionalData(names.data(), pids.data(), pidMap.size())) {
 				case PDEC_OK:
 					// the plugin is ready to provide positional data
 					this->activePositionalDataPlugin = currentPlugin;
+
 					return true;
 
 				case PDEC_ERROR_PERM:
