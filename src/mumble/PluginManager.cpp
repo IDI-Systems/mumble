@@ -14,8 +14,14 @@
 
 #include "ManualPlugin.h"
 
+#ifdef Q_OS_WIN
+	#include <tlhelp32.h>
+	#include <string>
+#endif
+
 PluginManager::PluginManager(QString sysPath, QString userPath, QObject *p) : QObject(p), pluginCollectionLock(QReadWriteLock::Recursive),
-	pluginHashMap(), systemPluginsPath(sysPath), userPluginsPath(userPath) {
+	pluginHashMap(), systemPluginsPath(sysPath), userPluginsPath(userPath), positionalData(), activePosDataPluginLock(QReadWriteLock::Recursive),
+		activePositionalDataPlugin() {
 	// Set the paths to read plugins from
 
 #ifdef Q_OS_WIN
@@ -58,6 +64,129 @@ void PluginManager::clearPlugins() {
 
 	// Clear the list itself
 	pluginHashMap.clear();
+}
+
+/// Fills the given map with currently running programs by adding their PID and their name
+///
+/// @param[out] pids The QMultiMap to write the gathered info to
+void getProgramPIDs(QMultiMap<QString, unsigned long long int> pids) {
+#if defined(Q_OS_WIN)
+	PROCESSENTRY32 pe;
+
+	pe.dwSize = sizeof(pe);
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hSnap != INVALID_HANDLE_VALUE) {
+		BOOL ok = Process32First(hSnap, &pe);
+
+		while (ok) {
+			pids.insert(QString::fromStdWString(std::wstring(pe.szExeFile)), pe.th32ProcessID);
+			ok = Process32Next(hSnap, &pe);
+		}
+		CloseHandle(hSnap);
+	}
+#elif defined(Q_OS_LINUX)
+	QDir d(QLatin1String("/proc"));
+	QStringList entries = d.entryList();
+	bool ok;
+	foreach (const QString &entry, entries) {
+		// Check if the entry is a PID
+		// by checking whether it's a number.
+		// If it is not, skip it.
+		unsigned long long int pid = static_cast<unsigned long long int>(entry.toLongLong(&ok, 10));
+		if (!ok) {
+			continue;
+		}
+
+		QString exe = QFile::symLinkTarget(QString(QLatin1String("/proc/%1/exe")).arg(entry));
+		QFileInfo fi(exe);
+		QString firstPart = fi.baseName();
+		QString completeSuffix = fi.completeSuffix();
+		QString baseName;
+		if (completeSuffix.isEmpty()) {
+			baseName = firstPart;
+		} else {
+			baseName = firstPart + QLatin1String(".") + completeSuffix;
+		}
+
+		if (baseName == QLatin1String("wine-preloader") || baseName == QLatin1String("wine64-preloader")) {
+			QFile f(QString(QLatin1String("/proc/%1/cmdline")).arg(entry));
+			if (f.open(QIODevice::ReadOnly)) {
+				QByteArray cmdline = f.readAll();
+				f.close();
+
+				int nul = cmdline.indexOf('\0');
+				if (nul != -1) {
+					cmdline.truncate(nul);
+				}
+
+				QString exe = QString::fromUtf8(cmdline);
+				if (exe.contains(QLatin1String("\\"))) {
+					int lastBackslash = exe.lastIndexOf(QLatin1String("\\"));
+					if (exe.count() > lastBackslash + 1) {
+						baseName = exe.mid(lastBackslash + 1);
+					}
+				}
+			}
+		}
+
+		if (!baseName.isEmpty()) {
+			pids.insert(baseName, pid);
+		}
+	}
+#endif
+}
+
+bool PluginManager::selectActivePositionalDataPlugin() {
+	QReadLocker pluginLock(&this->pluginCollectionLock);
+	QWriteLocker activePluginLock(&this->activePosDataPluginLock);
+
+	QHash<uint32_t, QSharedPointer<Plugin>>::iterator it = this->pluginHashMap.begin();
+
+	// gather PIDs and names of currently running programs
+	QMultiMap<QString, unsigned long long int> pidMap;
+	getProgramPIDs(pidMap);
+
+	const char* names[pidMap.size()];
+	uint64_t pids[pidMap.size()];
+
+	unsigned int index = 0;
+	// split the MultiMap into the two arrays
+	QMultiMap<QString, unsigned long long int>::const_iterator pidIter = pidMap.constBegin();
+	while (pidIter != pidMap.constEnd()) {
+		names[index] = pidIter.key().toUtf8().constData();
+		pids[index] = pidIter.value();
+
+		pidIter++;
+		index++;
+	}
+
+	// We assume that there is only one (enabled) plugin for the currently played game so we don't have to remember
+	// which plugin was active last
+	while (it != this->pluginHashMap.end()) {
+		QSharedPointer<Plugin> currentPlugin = it.value();
+
+		if (currentPlugin->isPositionalDataEnabled()) {
+			switch(currentPlugin->initPositionalData(names, pids, pidMap.size())) {
+				case PDEC_OK:
+					// the plugin is ready to provide positional data
+					this->activePositionalDataPlugin = currentPlugin;
+					return true;
+
+				case PDEC_ERROR_PERM:
+					// the plugin encountered a permanent error -> disable it
+					currentPlugin->enablePositionalData(false);
+					break;
+
+				// Default: The plugin encountered a temporary error -> skip it for now (that is: do nothing)
+			}
+		}
+
+		it++;
+	}
+
+	this->activePositionalDataPlugin = QSharedPointer<Plugin>();
+
+	return false;
 }
 
 #define LOG_FOUND(plugin, path, legacyStr) qDebug("Found %splugin '%s' at \"%s\"", legacyStr, qUtf8Printable(plugin->getName()), qUtf8Printable(path));\
@@ -135,7 +264,43 @@ void PluginManager::checkForPluginUpdates() const {
 }
 
 bool PluginManager::fetchPositionalData() {
-	// TODO
+	QReadLocker activePluginLock(&this->activePosDataPluginLock);
+
+	if (!this->activePositionalDataPlugin) {
+		// unlock the read-lock in order to allow selectActivePositionaldataPlugin to gain a write-lock
+		activePluginLock.unlock();
+
+		this->selectActivePositionalDataPlugin();
+
+		activePluginLock.relock();
+
+		if (!this->activePositionalDataPlugin) {
+			// It appears as if there is currently no plugin capable of delivering positional audio
+			// Set positional data to zero-values
+			this->positionalData.reset();
+
+			return false;
+		}
+	}
+
+	QWriteLocker posDataLock(&this->positionalData.lock);
+
+	bool retStatus = this->activePositionalDataPlugin->fetchPositionalData(this->positionalData.playerPos, this->positionalData.playerDir,
+		this->positionalData.playerAxis, this->positionalData.cameraPos, this->positionalData.cameraDir, this->positionalData.cameraAxis,
+			this->positionalData.context, this->positionalData.identity);
+
+	if (!retStatus) {
+		// Shut the currently active plugin down and set a new one (if available)
+		this->activePositionalDataPlugin->shutdownPositionalData();
+
+		// unlock the read-lock in order to allow selectActivePositionaldataPlugin to gain a write-lock
+		activePluginLock.unlock();
+
+		this->selectActivePositionalDataPlugin();
+	}
+
+	return retStatus;
+
 	return false;
 }
 

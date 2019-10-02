@@ -53,6 +53,7 @@ static_assert(sizeof(Vector3D) == 3*sizeof(float), "The compiler added padding t
 typedef Vector3D Position3D;
 
 class PositionalData {
+	friend class PluginManager; // needed in order for PluginManager::fetch to write to the contained fields
 	protected:
 		Position3D playerPos;
 		Vector3D playerDir;

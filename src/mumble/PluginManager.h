@@ -56,9 +56,10 @@ class PluginManager : public QObject {
 		PositionalData positionalData;
 
 		mutable QReadWriteLock activePosDataPluginLock;
-		Plugin *activePositionalDataPlugin;
+		QSharedPointer<Plugin> activePositionalDataPlugin;
 
 		void clearPlugins();
+		bool selectActivePositionalDataPlugin();
 	public:
 		PluginManager(QString sysPath = PLUGIN_SYS_PATH, QString userPath = PLUGIN_USER_PATH, QObject *p = NULL);
 		virtual ~PluginManager() Q_DECL_OVERRIDE;
