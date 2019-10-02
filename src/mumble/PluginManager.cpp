@@ -14,6 +14,7 @@
 #include <QtCore/QScopedArrayPointer>
 
 #include "ManualPlugin.h"
+#include "Log.h"
 
 #ifdef Q_OS_WIN
 	#include <tlhelp32.h>
@@ -244,7 +245,8 @@ void PluginManager::rescanPlugins() {
 					pluginHashMap.insert(lp->getID(), lp);
 				} catch(const PluginError& e) {
 					Q_UNUSED(e);
-					qWarning() << "Non-plugin library in plugin directory:" << currentInfo.absoluteFilePath();
+					
+					g.l->log(Log::Warning, QString::fromUtf8("Non-plugin found in plugin directory: ") + currentInfo.absoluteFilePath());
 				}
 			}
 		}
@@ -260,7 +262,7 @@ void PluginManager::rescanPlugins() {
 		LOG_FOUND_BUILTIN(mp);
 #endif
 	} catch(const PluginError& e) {
-		qCritical() << "Failed at loading manual plugin:" << e.what();
+		g.l->log(Log::Warning, QString::fromUtf8("Failed at loading manual plugin: ") + QString::fromUtf8(e.what()));
 	}
 #endif
 }
