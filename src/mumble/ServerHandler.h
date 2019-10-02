@@ -6,6 +6,12 @@
 #ifndef MUMBLE_MUMBLE_SERVERHANDLER_H_
 #define MUMBLE_MUMBLE_SERVERHANDLER_H_
 
+#include <QtCore/QtGlobal>
+
+#ifdef Q_OS_WIN
+# include "win.h"
+#endif
+
 #ifndef Q_MOC_RUN
 # include <boost/accumulators/accumulators.hpp>
 # include <boost/accumulators/statistics/stats.hpp>
@@ -22,10 +28,6 @@
 #include <QtNetwork/QHostAddress>
 #include <QtNetwork/QSslCipher>
 #include <QtNetwork/QSslError>
-
-#ifdef Q_OS_WIN
-#include <windows.h>
-#endif
 
 #define SERVERSEND_EVENT 3501
 
@@ -63,6 +65,7 @@ class ServerHandler : public QThread {
 		QString qsUserName;
 		QString qsPassword;
 		unsigned short usPort;
+		unsigned short usResolvedPort;
 		bool bUdp;
 		bool bStrong;
 

@@ -3,8 +3,6 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "OverlayClient.h"
 #include "OverlayPositionableItem.h"
 #include "OverlayEditor.h"
@@ -18,6 +16,18 @@
 #include "MainWindow.h"
 #include "GlobalShortcut.h"
 #include "Themes.h"
+#include "Utils.h"
+
+#ifdef Q_OS_WIN
+# include <QtGui/QBitmap>
+#endif
+
+#include <QtGui/QImageReader>
+#include <QtWidgets/QGraphicsProxyWidget>
+
+#ifdef Q_OS_WIN
+# include <psapi.h>
+#endif
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -49,7 +59,7 @@ OverlayClient::OverlayClient(QLocalSocket *socket, QObject *p)
 	// Make sure it has a native window id
 	qgv.winId();
 
-	qgpiCursor = new OverlayMouse();
+	qgpiCursor.reset(new OverlayMouse());
 	qgpiCursor->hide();
 	qgpiCursor->setZValue(10.0f);
 
@@ -57,18 +67,16 @@ OverlayClient::OverlayClient(QLocalSocket *socket, QObject *p)
 	qgs.addItem(&ougUsers);
 	ougUsers.show();
 
-	qgpiFPS = new OverlayPositionableItem(&g.s.os.qrfFps);
-	qgs.addItem(qgpiFPS);
+	qgpiFPS.reset(new OverlayPositionableItem(&g.s.os.qrfFps));
+	qgs.addItem(qgpiFPS.data());
 	qgpiFPS->setPos(g.s.os.qrfFps.x(), g.s.os.qrfFps.y());
 	qgpiFPS->show();
 
 	// Time
-	qgpiTime = new OverlayPositionableItem(&g.s.os.qrfTime);
-	qgs.addItem(qgpiTime);
+	qgpiTime.reset(new OverlayPositionableItem(&g.s.os.qrfTime));
+	qgs.addItem(qgpiTime.data());
 	qgpiTime->setPos(g.s.os.qrfTime.x(), g.s.os.qrfTime.y());
 	qgpiTime->show();
-
-	qgpiLogo = NULL;
 
 	iOffsetX = iOffsetY = 0;
 
@@ -76,11 +84,6 @@ OverlayClient::OverlayClient(QLocalSocket *socket, QObject *p)
 }
 
 OverlayClient::~OverlayClient() {
-	delete qgpiFPS;
-	delete qgpiTime;
-	delete qgpiCursor;
-	delete qgpiLogo;
-
 	qlsSocket->disconnectFromServer();
 	if (!qlsSocket->waitForDisconnected(1000)) {
 		qDebug() << "OverlayClient: Failed to cleanly disconnect: " << qlsSocket->errorString();
@@ -504,8 +507,7 @@ void OverlayClient::reset() {
 	if (! uiWidth || ! uiHeight || ! smMem)
 		return;
 
-	delete qgpiLogo;
-	qgpiLogo = NULL;
+	qgpiLogo.reset();
 
 	ougUsers.reset();
 
@@ -517,7 +519,7 @@ void OverlayClient::setupScene(bool show) {
 		qgs.setBackgroundBrush(QColor(0,0,0,64));
 
 		if (! qgpiLogo) {
-			qgpiLogo = new OverlayMouse();
+			qgpiLogo.reset(new OverlayMouse());
 			qgpiLogo->hide();
 			qgpiLogo->setOpacity(0.8f);
 			qgpiLogo->setZValue(-5.0f);
@@ -536,20 +538,20 @@ void OverlayClient::setupScene(bool show) {
 		}
 
 		qgpiCursor->show();
-		qgs.addItem(qgpiCursor);
+		qgs.addItem(qgpiCursor.data());
 
 		qgpiLogo->show();
-		qgs.addItem(qgpiLogo);
+		qgs.addItem(qgpiLogo.data());
 	} else {
 		qgs.setBackgroundBrush(Qt::NoBrush);
 
 		if (qgpiCursor->scene())
-			qgs.removeItem(qgpiCursor);
+			qgs.removeItem(qgpiCursor.data());
 		qgpiCursor->hide();
 
 		if (qgpiLogo) {
 			if (qgpiLogo->scene())
-				qgs.removeItem(qgpiLogo);
+				qgs.removeItem(qgpiLogo.data());
 			qgpiLogo->hide();
 		}
 

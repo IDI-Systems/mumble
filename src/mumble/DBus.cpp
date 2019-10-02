@@ -3,14 +3,16 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "DBus.h"
 
 #include "Channel.h"
 #include "ClientUser.h"
 #include "MainWindow.h"
 #include "ServerHandler.h"
+
+#include <QtCore/QUrlQuery>
+#include <QtDBus/QDBusConnection>
+#include <QtDBus/QDBusMessage>
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -96,4 +98,12 @@ bool MumbleDBus::isSelfMuted() {
 
 bool MumbleDBus::isSelfDeaf() {
 	return g.s.bDeaf;
+}
+
+void MumbleDBus::startTalking() {
+    g.mw->on_PushToTalk_triggered(true, QVariant());
+}
+
+void MumbleDBus::stopTalking () {
+    g.mw->on_PushToTalk_triggered(false, QVariant());
 }

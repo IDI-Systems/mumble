@@ -3,8 +3,6 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "Log.h"
 
 #include "AudioOutput.h"
@@ -16,6 +14,14 @@
 #include "Screen.h"
 #include "ServerHandler.h"
 #include "TextToSpeech.h"
+#include "Utils.h"
+
+#include <QtNetwork/QNetworkReply>
+#include <QtGui/QImageWriter>
+#include <QtGui/QScreen>
+#include <QtGui/QTextBlock>
+#include <QtGui/QTextDocumentFragment>
+#include <QtWidgets/QDesktopWidget>
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -114,6 +120,9 @@ void LogConfig::load(const Settings &r) {
 	loadSlider(qsVolume, r.iTTSVolume);
 	qsbThreshold->setValue(r.iTTSThreshold);
 	qcbReadBackOwn->setChecked(r.bTTSMessageReadBack);
+	qcbNoScope->setChecked(r.bTTSNoScope);
+	qcbNoAuthor->setChecked(r.bTTSNoAuthor);
+
 #endif
 	qcbWhisperFriends->setChecked(r.bWhisperFriends);
 }
@@ -145,6 +154,8 @@ void LogConfig::save() const {
 	s.iTTSVolume=qsVolume->value();
 	s.iTTSThreshold=qsbThreshold->value();
 	s.bTTSMessageReadBack = qcbReadBackOwn->isChecked();
+	s.bTTSNoScope = qcbNoScope->isChecked();
+	s.bTTSNoAuthor = qcbNoAuthor->isChecked();
 #endif
 	s.bWhisperFriends = qcbWhisperFriends->isChecked();
 }
@@ -451,7 +462,7 @@ QString Log::validHtml(const QString &html, QTextCursor *tc) {
 	}
 }
 
-void Log::log(MsgType mt, const QString &console, const QString &terse, bool ownMessage) {
+void Log::log(MsgType mt, const QString &console, const QString &terse, bool ownMessage, const QString &overrideTTS) {
 	QDateTime dt = QDateTime::currentDateTime();
 
 	int ignore = qmIgnore.value(mt);
@@ -536,6 +547,11 @@ void Log::log(MsgType mt, const QString &console, const QString &terse, bool own
 	// Message notification with Text-To-Speech
 	if (g.s.bDeaf || !g.s.bTTS || !(flags & Settings::LogTTS)) {
 		return;
+	}
+
+	// If overrideTTS is a valid string use its contents as message
+	if (!overrideTTS.isNull()) {
+		plain = overrideTTS;
 	}
 
 	// Apply simplifications to spoken text

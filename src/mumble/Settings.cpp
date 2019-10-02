@@ -3,17 +3,24 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "Settings.h"
 
 #include "AudioInput.h"
 #include "Cert.h"
 #include "Log.h"
-#include "Global.h"
 #include "SSL.h"
 
 #include "../../overlay/overlay.h"
+
+#include <QtCore/QProcessEnvironment>
+#include <QtCore/QStandardPaths>
+#include <QtGui/QImageReader>
+#include <QtWidgets/QSystemTrayIcon>
+
+#include <boost/typeof/typeof.hpp>
+
+// We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
+#include "Global.h"
 
 bool Shortcut::isServerSpecific() const {
 	if (qvData.canConvert<ShortcutTarget>()) {
@@ -224,6 +231,8 @@ Settings::Settings() {
 	bMute = bDeaf = false;
 	bTTS = true;
 	bTTSMessageReadBack = false;
+	bTTSNoScope = false;
+	bTTSNoAuthor = false;
 	iTTSVolume = 75;
 	iTTSThreshold = 250;
 	qsTTSLanguage = QString();
@@ -241,6 +250,7 @@ Settings::Settings() {
 	iFramesPerPacket = 2;
 	iNoiseSuppress = -30;
 	bDenoise = false;
+	bAllowLowDelay = true;
 	uiAudioInputChannelMask = 0xffffffffffffffffULL;
 
 	// Idle auto actions
@@ -251,8 +261,6 @@ Settings::Settings() {
 	vsVAD = Amplitude;
 	fVADmin = 0.80f;
 	fVADmax = 0.98f;
-
-	bUseOpusMusicEncoding = false;
 
 	bTxAudioCue = false;
 	qsTxAudioCueOn = cqsDefaultPushClickOn;
@@ -620,6 +628,7 @@ void Settings::load(QSettings* settings_ptr) {
 	SAVELOAD(fVADmax, "audio/vadmax");
 	SAVELOAD(iNoiseSuppress, "audio/noisesupress");
 	SAVELOAD(bDenoise, "audio/denoise");
+	SAVELOAD(bAllowLowDelay, "audio/allowlowdelay");
 	SAVELOAD(uiAudioInputChannelMask, "audio/inputchannelmask");
 	SAVELOAD(iVoiceHold, "audio/voicehold");
 	SAVELOAD(iOutputDelay, "audio/outputdelay");
@@ -643,8 +652,6 @@ void Settings::load(QSettings* settings_ptr) {
 	SAVELOAD(qsAudioOutput, "audio/output");
 	SAVELOAD(bWhisperFriends, "audio/whisperfriends");
 	SAVELOAD(bTransmitPosition, "audio/postransmit");
-
-	SAVELOAD(bUseOpusMusicEncoding, "codec/opus/encoder/music");
 
 	SAVELOAD(iJitterBufferSize, "net/jitterbuffer");
 	SAVELOAD(iFramesPerPacket, "net/framesperpacket");
@@ -684,6 +691,8 @@ void Settings::load(QSettings* settings_ptr) {
 	SAVELOAD(iTTSVolume, "tts/volume");
 	SAVELOAD(iTTSThreshold, "tts/threshold");
 	SAVELOAD(bTTSMessageReadBack, "tts/readback");
+	SAVELOAD(bTTSNoScope, "tts/noscope");
+	SAVELOAD(bTTSNoAuthor, "tts/noauthor");
 	SAVELOAD(qsTTSLanguage, "tts/language");
 
 	// Network settings
@@ -961,6 +970,7 @@ void Settings::save() {
 	SAVELOAD(fVADmax, "audio/vadmax");
 	SAVELOAD(iNoiseSuppress, "audio/noisesupress");
 	SAVELOAD(bDenoise, "audio/denoise");
+	SAVELOAD(bAllowLowDelay, "audio/allowlowdelay");
 	SAVELOAD(uiAudioInputChannelMask, "audio/inputchannelmask");
 	SAVELOAD(iVoiceHold, "audio/voicehold");
 	SAVELOAD(iOutputDelay, "audio/outputdelay");
@@ -984,8 +994,6 @@ void Settings::save() {
 	SAVELOAD(qsAudioOutput, "audio/output");
 	SAVELOAD(bWhisperFriends, "audio/whisperfriends");
 	SAVELOAD(bTransmitPosition, "audio/postransmit");
-
-	SAVELOAD(bUseOpusMusicEncoding, "codec/opus/encoder/music");
 
 	SAVELOAD(iJitterBufferSize, "net/jitterbuffer");
 	SAVELOAD(iFramesPerPacket, "net/framesperpacket");
@@ -1025,6 +1033,8 @@ void Settings::save() {
 	SAVELOAD(iTTSVolume, "tts/volume");
 	SAVELOAD(iTTSThreshold, "tts/threshold");
 	SAVELOAD(bTTSMessageReadBack, "tts/readback");
+	SAVELOAD(bTTSNoScope, "tts/noscope");
+	SAVELOAD(bTTSNoAuthor, "tts/noauthor");
 	SAVELOAD(qsTTSLanguage, "tts/language");
 
 	// Network settings

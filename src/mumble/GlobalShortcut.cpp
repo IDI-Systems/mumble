@@ -3,8 +3,6 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "GlobalShortcut.h"
 
 #include "AudioInput.h"
@@ -12,6 +10,16 @@
 #include "Channel.h"
 #include "Database.h"
 #include "MainWindow.h"
+
+#include <QtCore/QProcess>
+#include <QtCore/QSortFilterProxyModel>
+#include <QtGui/QFocusEvent>
+#include <QtWidgets/QItemEditorFactory>
+
+#ifdef Q_OS_MAC
+# include <QtCore/QOperatingSystemVersion>
+# include <ApplicationServices/ApplicationServices.h>
+#endif
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -127,6 +135,16 @@ ShortcutActionWidget::ShortcutActionWidget(QWidget *p) : MUComboBox(p) {
 			setItemData(idx, gs->qsWhatsThis, Qt::WhatsThisRole);
 		idx++;
 	}
+
+    // Sort the ShortcutActionWidget items
+    QSortFilterProxyModel *proxy = new QSortFilterProxyModel(this);
+    proxy->setSourceModel(model());
+
+    model()->setParent(proxy);
+    setModel(proxy);
+
+    model()->sort(0);
+
 }
 
 void ShortcutActionWidget::setIndex(int idx) {

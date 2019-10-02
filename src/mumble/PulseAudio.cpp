@@ -3,8 +3,6 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "PulseAudio.h"
 
 #include "MainWindow.h"
@@ -202,9 +200,8 @@ void PulseAudioSystem::eventCallback(pa_mainloop_api *api, pa_defer_event *) {
 						pasOutput = pa_stream_new(pacContext, mumble_sink_input, &pss, (pss.channels == 1) ? NULL : &pcm);
 						pa_stream_set_state_callback(pasOutput, stream_callback, this);
 						pa_stream_set_write_callback(pasOutput, write_callback, this);
-
-						// Fallthrough
 					}
+					// Fallthrough
 				case PA_STREAM_UNCONNECTED:
 					do_start = true;
 					break;
@@ -271,10 +268,8 @@ void PulseAudioSystem::eventCallback(pa_mainloop_api *api, pa_defer_event *) {
 						pasInput = pa_stream_new(pacContext, "Microphone", &pss, NULL);
 						pa_stream_set_state_callback(pasInput, stream_callback, this);
 						pa_stream_set_read_callback(pasInput, read_callback, this);
-
-						// Fallthrough
 					}
-
+					// Fallthrough
 				case PA_STREAM_UNCONNECTED:
 					do_start = true;
 					break;
@@ -336,9 +331,8 @@ void PulseAudioSystem::eventCallback(pa_mainloop_api *api, pa_defer_event *) {
 						pasSpeaker = pa_stream_new(pacContext, mumble_echo, &pss, (pss.channels == 1) ? NULL : &pcm);
 						pa_stream_set_state_callback(pasSpeaker, stream_callback, this);
 						pa_stream_set_read_callback(pasSpeaker, read_callback, this);
-
-						// Fallthrough
 					}
+					// Fallthrough
 				case PA_STREAM_UNCONNECTED:
 					do_start = true;
 					break;
@@ -535,13 +529,7 @@ void PulseAudioSystem::write_callback(pa_stream *s, size_t bytes, void *userdata
 	AudioOutputPtr ao = g.ao;
 	PulseAudioOutput *pao = dynamic_cast<PulseAudioOutput *>(ao.get());
 
-	unsigned char buffer[bytes];
-
 	if (! pao) {
-		// Transitioning, but most likely transitions back, so just zero.
-		memset(buffer, 0, bytes);
-		pa_stream_write(s, buffer, bytes, NULL, 0, PA_SEEK_RELATIVE);
-		pas->wakeup();
 		return;
 	}
 
@@ -606,6 +594,7 @@ void PulseAudioSystem::write_callback(pa_stream *s, size_t bytes, void *userdata
 	const unsigned int samples = static_cast<unsigned int>(bytes) / iSampleSize;
 	bool oldAttenuation = pas->bAttenuating;
 
+	unsigned char buffer[bytes];
 	// do we have some mixed output?
 	if (pao->mix(buffer, samples)) {
 		// attenuate if instructed to or it's in settings

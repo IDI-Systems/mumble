@@ -3,7 +3,15 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
+// We want to include <math.h> with _USE_MATH_DEFINES defined.
+// To make sure we do so before anything else includes the header without it
+// (triggering the guard and effectively preventing a "fix include")
+// we define and include before anything else.
+#ifdef _MSC_VER
+# define _USE_MATH_DEFINES
+#endif
+
+#include <cmath>
 
 #include "AudioOutputSpeech.h"
 
@@ -13,6 +21,7 @@
 #include "ClientUser.h"
 #include "Global.h"
 #include "PacketDataStream.h"
+#include "Utils.h"
 
 AudioOutputSpeech::AudioOutputSpeech(ClientUser *user, unsigned int freq, MessageHandler::UDPMessageType type) : AudioOutputUser(user->qsName) {
 	int err;
@@ -166,7 +175,7 @@ void AudioOutputSpeech::addFrameToBuffer(const QByteArray &qbaPacket, unsigned i
 	}
 }
 
-bool AudioOutputSpeech::needSamples(unsigned int snum) {
+bool AudioOutputSpeech::prepareSampleBuffer(unsigned int snum) {
 	for (unsigned int i=iLastConsume;i<iBufferFilled;++i)
 		pfBuffer[i-iLastConsume]=pfBuffer[i];
 	iBufferFilled -= iLastConsume;
@@ -317,7 +326,7 @@ bool AudioOutputSpeech::needSamples(unsigned int snum) {
 					for (unsigned int i=0;i<iFrameSize;++i)
 						pOut[i] *= (1.0f / 32767.f);
 				} else {
-					qWarning("AudioOutputSpeech: encountered unknown message type %li in needSamples().", static_cast<long>(umtType));
+					qWarning("AudioOutputSpeech: encountered unknown message type %li in prepareSampleBuffer().", static_cast<long>(umtType));
 				}
 
 				bool update = true;

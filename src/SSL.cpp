@@ -3,12 +3,16 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "murmur_pch.h"
-
 #include "SSL.h"
 #include "SSLLocks.h"
 
 #include "Version.h"
+
+
+#include <QtNetwork/QSslConfiguration>
+#include <QtNetwork/QSslSocket>
+
+#include <openssl/ssl.h>
 
 void MumbleSSL::initialize() {
 	// Let Qt initialize its copy of OpenSSL, if it's different than
@@ -212,9 +216,11 @@ void MumbleSSL::addSystemCA() {
 	QSslSocket::setDefaultCaCertificates(ql);
 #endif // NO_SYSTEM_CA_OVERRIDE
 
-#if QT_VERSION >= 0x040800
 	// Don't perform on-demand loading of root certificates
+#if QT_VERSION >= 0x050500
 	QSslSocket::addDefaultCaCertificates(QSslConfiguration::systemCaCertificates());
+#elif QT_VERSION >= 0x040800
+	QSslSocket::addDefaultCaCertificates(QSslSocket::systemCaCertificates());
 #endif
 
 #ifdef Q_OS_WIN

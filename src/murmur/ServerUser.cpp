@@ -3,11 +3,14 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "murmur_pch.h"
-
-#include "Server.h"
 #include "ServerUser.h"
+
 #include "Meta.h"
+#include "Server.h"
+
+#ifdef Q_OS_UNIX
+# include "Utils.h"
+#endif
 
 ServerUser::ServerUser(Server *p, QSslSocket *socket) : Connection(p, socket), User(), s(NULL), leakyBucket(p->iMessageLimit, p->iMessageBurst) {
 	sState = ServerUser::Connected;
@@ -91,7 +94,6 @@ int BandwidthRecord::bandwidth() const {
 	QMutexLocker ml(&qmMutex);
 
 	int sum = 0;
-	int records = 0;
 	quint64 elapsed = 0ULL;
 
 	for (int i=1;i<N_BANDWIDTH_SLOTS;++i) {
@@ -100,7 +102,6 @@ int BandwidthRecord::bandwidth() const {
 		if (e > 1000000ULL) {
 			break;
 		} else {
-			++records;
 			sum += a_iBW[idx];
 			elapsed = e;
 		}

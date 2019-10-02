@@ -3,8 +3,6 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "About.h"
 #include "ACLEditor.h"
 #include "AudioInput.h"
@@ -28,6 +26,7 @@
 #include "VersionCheck.h"
 #include "ViewCert.h"
 #include "CryptState.h"
+#include "Utils.h"
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -703,6 +702,7 @@ void MainWindow::msgChannelRemove(const MumbleProto::ChannelRemove &msg) {
 void MainWindow::msgTextMessage(const MumbleProto::TextMessage &msg) {
 	ACTOR_INIT;
 	QString target;
+	QString overrideTTS = QString();
 
 	// Silently drop the message if this user is set to "ignore"
 	if (pSrc && pSrc->bLocalIgnore)
@@ -721,9 +721,22 @@ void MainWindow::msgTextMessage(const MumbleProto::TextMessage &msg) {
 		privateMessage = true;
 	}
 
+	// If NoScope or NoAuthor is selected generate a new string to pass to TTS
+	if (g.s.bTTSNoScope || g.s.bTTSNoAuthor) {
+		if (g.s.bTTSNoScope && g.s.bTTSNoAuthor) {
+			overrideTTS += tr("%2%1: %3").arg(QString()).arg(QString()).arg(u8(msg.message()));
+		} else if (g.s.bTTSNoAuthor) {
+			overrideTTS += tr("%2%1: %3").arg(QString()).arg(target).arg(u8(msg.message()));
+		} else if (g.s.bTTSNoScope) {
+			overrideTTS += tr("%2%1: %3").arg(name).arg(QString()).arg(u8(msg.message()));
+		}
+	}
+
 	g.l->log(privateMessage ? Log::PrivateTextMessage : Log::TextMessage,
 	         tr("%2%1: %3").arg(name).arg(target).arg(u8(msg.message())),
-	         tr("Message from %1").arg(plainName));
+	         tr("Message from %1").arg(plainName),
+	         false,
+	         overrideTTS.isNull() ? QString() : overrideTTS);
 }
 
 void MainWindow::msgACL(const MumbleProto::ACL &msg) {

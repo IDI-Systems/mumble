@@ -3,7 +3,11 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
+#include <QtCore/QtGlobal>
+
+#ifdef Q_OS_WIN
+# include "win.h"
+#endif
 
 #include "ServerHandler.h"
 
@@ -24,6 +28,33 @@
 #include "HostAddress.h"
 #include "ServerResolver.h"
 #include "ServerResolverRecord.h"
+#include "Utils.h"
+
+#include <QtCore/QtEndian>
+#include <QtGui/QImageReader>
+#include <QtNetwork/QSslConfiguration>
+#include <QtNetwork/QUdpSocket>
+
+#include <openssl/crypto.h>
+
+#ifdef Q_OS_WIN
+// <delayimp.h> is not protected with an include guard on MinGW, resulting in
+// redefinitions if the PCH header is used.
+// The workaround consists in including the header only if _DELAY_IMP_VER
+// (defined in the header) is not defined.
+# ifndef _DELAY_IMP_VER
+#  include <delayimp.h>
+# endif
+# include <qos2.h>
+# include <wincrypt.h>
+# include <winsock2.h>
+#else
+# if defined(Q_OS_FREEBSD) || defined(Q_OS_OPENBSD)
+#  include <netinet/in.h>
+# endif
+# include <netinet/ip.h>
+# include <sys/socket.h>
+#endif
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -157,7 +188,7 @@ void ServerHandler::udpReady() {
 		quint16 senderPort;
 		qusUdp->readDatagram(encrypted, qMin(2048U, buflen), &senderAddr, &senderPort);
 
-		if (!(HostAddress(senderAddr) == HostAddress(qhaRemote)) || (senderPort != usPort))
+		if (!(HostAddress(senderAddr) == HostAddress(qhaRemote)) || (senderPort != usResolvedPort))
 			continue;
 
 		ConnectionPtr connection(cConnection);
@@ -245,7 +276,7 @@ void ServerHandler::sendMessage(const char *data, int len, bool force) {
 		QApplication::postEvent(this, new ServerHandlerMessageEvent(qba, MessageHandler::UDPTunnel, true));
 	} else {
 		connection->csCrypt.encrypt(reinterpret_cast<const unsigned char *>(data), crypto, len);
-		qusUdp->writeDatagram(reinterpret_cast<const char *>(crypto), len + 4, qhaRemote, usPort);
+		qusUdp->writeDatagram(reinterpret_cast<const char *>(crypto), len + 4, qhaRemote, usResolvedPort);
 	}
 }
 
@@ -702,6 +733,7 @@ void ServerHandler::serverConnectionConnected() {
 
 		qhaRemote = connection->peerAddress();
 		qhaLocal = connection->localAddress();
+		usResolvedPort = connection->peerPort();
 		if (qhaLocal.isNull()) {
 			qFatal("ServerHandler: qhaLocal is unexpectedly a null addr");
 		}

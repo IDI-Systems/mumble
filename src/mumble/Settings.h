@@ -171,6 +171,8 @@ struct Settings {
 	bool bUserTop;
 	bool bWhisperFriends;
 	bool bTTSMessageReadBack;
+	bool bTTSNoScope;
+	bool bTTSNoAuthor;
 	int iTTSVolume, iTTSThreshold;
 	/// The Text-to-Speech language to use. This setting overrides
 	/// the default language for the Text-to-Speech engine, which
@@ -183,6 +185,7 @@ struct Settings {
 	QString qsTTSLanguage;
 	int iQuality, iMinLoudness, iVoiceHold, iJitterBufferSize;
 	int iNoiseSuppress;
+	bool bAllowLowDelay;
 	bool bDenoise;
 	quint64 uiAudioInputChannelMask;
 
@@ -203,7 +206,6 @@ struct Settings {
 	bool bOnlyAttenuateSameOutput;
 	bool bAttenuateLoopbacks;
 	int iOutputDelay;
-	bool bUseOpusMusicEncoding;
 
 	QString qsALSAInput, qsALSAOutput;
 	QString qsPulseAudioInput, qsPulseAudioOutput;

@@ -3,8 +3,6 @@
 // that can be found in the LICENSE file at the root of the
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
-#include "mumble_pch.hpp"
-
 #include "ConnectDialog.h"
 
 #ifdef USE_BONJOUR
@@ -18,6 +16,27 @@
 #include "ServerHandler.h"
 #include "WebFetch.h"
 #include "ServerResolver.h"
+#include "Utils.h"
+
+#include <QtCore/QMimeData>
+#include <QtCore/QUrlQuery>
+#include <QtCore/QtEndian>
+#include <QtGui/QClipboard>
+#include <QtGui/QDesktopServices>
+#include <QtGui/QPainter>
+#include <QtNetwork/QUdpSocket>
+#include <QtWidgets/QInputDialog>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QShortcut>
+#include <QtXml/QDomDocument>
+
+#include <boost/accumulators/statistics/extended_p_square.hpp>
+#include <boost/array.hpp>
+
+#ifdef Q_OS_WIN
+# include <shlobj.h>
+#endif
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -1062,13 +1081,13 @@ ConnectDialog::ConnectDialog(QWidget *p, bool autoconnect) : QDialog(p), bAutoCo
 #ifdef USE_BONJOUR
 	// Make sure the we got the objects we need, then wire them up
 	if (bAllowBonjour && g.bc->bsbBrowser && g.bc->bsrResolver) {
-		connect(g.bc->bsbBrowser, SIGNAL(error(DNSServiceErrorType)),
+		connect(g.bc->bsbBrowser.data(), SIGNAL(error(DNSServiceErrorType)),
 		        this, SLOT(onLanBrowseError(DNSServiceErrorType)));
-		connect(g.bc->bsbBrowser, SIGNAL(currentBonjourRecordsChanged(const QList<BonjourRecord> &)),
+		connect(g.bc->bsbBrowser.data(), SIGNAL(currentBonjourRecordsChanged(const QList<BonjourRecord> &)),
 		        this, SLOT(onUpdateLanList(const QList<BonjourRecord> &)));
-		connect(g.bc->bsrResolver, SIGNAL(error(BonjourRecord, DNSServiceErrorType)),
+		connect(g.bc->bsrResolver.data(), SIGNAL(error(BonjourRecord, DNSServiceErrorType)),
 		        this, SLOT(onLanResolveError(BonjourRecord, DNSServiceErrorType)));
-		connect(g.bc->bsrResolver, SIGNAL(bonjourRecordResolved(BonjourRecord, QString, int)),
+		connect(g.bc->bsrResolver.data(), SIGNAL(bonjourRecordResolved(BonjourRecord, QString, int)),
 		        this, SLOT(onResolved(BonjourRecord, QString, int)));
 		onUpdateLanList(g.bc->bsbBrowser->currentRecords());
 	}
