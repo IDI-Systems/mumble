@@ -85,6 +85,7 @@ class Plugin : public QObject {
 		mutable QReadWriteLock pluginLock;
 		PluginAPIFunctions apiFnc;
 		bool isBuiltIn;
+		bool isPosDataEnabled;
 
 		virtual bool doInitialize();
 		virtual void resolveFunctionPointers();
@@ -96,6 +97,8 @@ class Plugin : public QObject {
 		virtual uint32_t getID() const Q_DECL_FINAL;
 		virtual bool isBuiltInPlugin() const Q_DECL_FINAL;
 		virtual QString getFilePath() const;
+		virtual bool isPositionalDataEnabled() const Q_DECL_FINAL;
+		virtual void enablePositionalData(bool enable = true);
 
 		// template for a factory-method which is needed to ensure that every Plugin object will always
 		// be initialized be the right call to its init() functions (if overwritten by a child-class, then

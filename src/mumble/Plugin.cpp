@@ -14,7 +14,7 @@ QMutex Plugin::idLock(QMutex::Recursive);
 
 
 Plugin::Plugin(QString path, bool isBuiltIn, QObject *p) : QObject(p), lib(path), pluginPath(path), pluginIsLoaded(false), pluginLock(QReadWriteLock::Recursive),
-	apiFnc(), isBuiltIn(isBuiltIn) {
+	apiFnc(), isBuiltIn(isBuiltIn), isPosDataEnabled(false) {
 	// See if the plugin is loadable in the first place unless it is a built-in plugin
 	pluginIsValid = isBuiltIn || lib.load();
 
@@ -141,6 +141,18 @@ QString Plugin::getFilePath() const {
 	PluginReadLocker lock(&this->pluginLock);
 
 	return this->pluginPath;
+}
+
+bool Plugin::isPositionalDataEnabled() const {
+	PluginReadLocker lock(&this->pluginLock);
+
+	return this->isPosDataEnabled;
+}
+
+void Plugin::enablePositionalData(bool enable) {
+	QWriteLocker lock(&this->pluginLock);
+
+	this->isPosDataEnabled = enable;
 }
 
 MumbleError_t Plugin::init() {
