@@ -120,7 +120,7 @@ const QSharedPointer<const Plugin> PluginConfig::pluginForItem(QTreeWidgetItem *
 		return g.pluginManager->getPlugin(i->data(0, Qt::UserRole).toUInt());
 	}
 
-	return nullptr;
+	return QSharedPointer<const Plugin>();
 }
 
 void PluginConfig::on_qpbConfig_clicked() {
