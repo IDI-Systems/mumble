@@ -437,7 +437,7 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 					cameraAxis = { 0.0f, 1.0f, 0.0f };
 				}
 
-				if (std::abs(cameraDir.dotProduct(cameraAxis) > 0.01f)) {
+				if (std::abs(cameraDir.dotProduct(cameraAxis)) > 0.01f) {
 					// Not perpendicular. Assume Y up and rotate 90 degrees.
 
 					float azimuth = 0.0f;
