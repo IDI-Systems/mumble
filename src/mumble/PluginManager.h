@@ -17,7 +17,15 @@
 #include "MumbleApplication.h"
 #include "PositionalData.h"
 
-class Global;
+// Check whether the macro g has been defined before including Global.h
+#ifdef g
+	#define G_WAS_ALREADY_DEFINED
+#endif
+// Global.h defines a macro g that can lead to name clashes with e.g. variable names inside protobuf. Thus it should normally 
+// be included last. This isn't possible here though so we establish a workaround so that we don't let the definition of g
+// get outside the relevant section if it hasn't been defined before this include. This is possible because the macro definition
+// is placed outside the header guard of Global.h allowing for a later macro definition on inclusion of Global.h
+#include "Global.h"
 
 // Figure out where the plugin directories will be on the respective system
 #ifdef QT_NO_DEBUG
@@ -31,11 +39,17 @@ class Global;
 		#define PLUGIN_PATH QLatin1String(MUMTEXT(PLUGIN_PATH))
 	#endif // PLUGIN_PATH
 
-	#define PLUGIN_USER_PATH (*Global::g_global_struct).qdBasePath.absolutePath() + QLatin1String("/Plugins")
+	#define PLUGIN_USER_PATH g.qdBasePath.absolutePath() + QLatin1String("/Plugins")
 #else // QT_NO_DEBUG
 	#define PLUGIN_SYS_PATH QString::fromLatin1("%1/plugins").arg(MumbleApplication::instance()->applicationVersionRootPath())
 	#define PLUGIN_USER_PATH QString()
 #endif // QT_NO_DEBUG
+
+// If the macro g has been defined by including Global.h from this header file it has to be undefined again in order to avoid
+// name clashes with e.g. variable names in protobuf
+#ifndef G_WAS_ALREADY_DEFINED
+	#undef g
+#endif
 
 class PluginManager : public QObject {
 	private:
