@@ -39,7 +39,7 @@
 		#define PLUGIN_PATH QLatin1String(MUMTEXT(PLUGIN_PATH))
 	#endif // PLUGIN_PATH
 
-	#define PLUGIN_USER_PATH g.qdBasePath.absolutePath() + QLatin1String("/Plugins")
+	#define PLUGIN_USER_PATH (*Global::g_global_struct).qdBasePath.absolutePath() + QLatin1String("/Plugins")
 #else // QT_NO_DEBUG
 	#define PLUGIN_SYS_PATH QString::fromLatin1("%1/plugins").arg(MumbleApplication::instance()->applicationVersionRootPath())
 	#define PLUGIN_USER_PATH QString()

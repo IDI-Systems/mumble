@@ -134,4 +134,3 @@ const int MUMBLE_EXIT_CODE_RESTART = 64738;
 #ifndef g
 	#define g (*Global::g_global_struct)
 #endif
-
