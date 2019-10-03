@@ -75,7 +75,7 @@ void PluginManager::clearPlugins() {
 /// Fills the given map with currently running programs by adding their PID and their name
 ///
 /// @param[out] pids The QMultiMap to write the gathered info to
-void getProgramPIDs(QMultiMap<QString, unsigned long long int> pids) {
+void getProgramPIDs(QMultiMap<QString, unsigned long long int>& pids) {
 #if defined(Q_OS_WIN)
 	PROCESSENTRY32 pe;
 
