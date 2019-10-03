@@ -6,6 +6,7 @@
 #include "PositionalData.h"
 #include <cmath>
 #include <cstdlib>
+#include <stdexcept>
 #include <QtCore/QReadLocker>
 
 Vector3D::Vector3D() : x(0.0f), y(0.0f), z(0.0f) {
