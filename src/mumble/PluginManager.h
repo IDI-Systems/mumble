@@ -17,9 +17,8 @@
 #include "MumbleApplication.h"
 #include "PositionalData.h"
 
-// We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
-#include "Global.h"
-
+class Global;
+#define g (*Global::g_global_struct)
 
 // Figure out where the plugin directories will be on the respective system
 #ifdef QT_NO_DEBUG
@@ -38,6 +37,10 @@
 	#define PLUGIN_SYS_PATH QString::fromLatin1("%1/plugins").arg(MumbleApplication::instance()->applicationVersionRootPath())
 	#define PLUGIN_USER_PATH QString()
 #endif // QT_NO_DEBUG
+
+// undefine g as this can lead to problem if this hasn't been introduced with the last include in a file which can't be guaranteed
+// by a header file
+#undef g
 
 class PluginManager : public QObject {
 	private:
