@@ -188,6 +188,8 @@ void Plugin::shutdown() {
 }
 
 QString Plugin::getName() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.getName) {
 		return QString::fromUtf8(this->apiFnc.getName());
 	} else {
@@ -196,6 +198,8 @@ QString Plugin::getName() const {
 }
 
 Version_t Plugin::getAPIVersion() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.getAPIVersion) {
 		return this->apiFnc.getAPIVersion();
 	} else {
@@ -204,6 +208,8 @@ Version_t Plugin::getAPIVersion() const {
 }
 
 void Plugin::registerAPIFunctions(const MumbleAPI *api) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.registerAPIFunctions) {
 		this->registerAPIFunctions(api);
 	}
@@ -211,12 +217,16 @@ void Plugin::registerAPIFunctions(const MumbleAPI *api) {
 
 
 void Plugin::setMumbleInfo(Version_t mumbleVersion, Version_t mumbleAPIVersion, Version_t minimalExpectedAPIVersion) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.setMumbleInfo) {
 		this->apiFnc.setMumbleInfo(mumbleVersion, mumbleAPIVersion, minimalExpectedAPIVersion);
 	}
 }
 
 Version_t Plugin::getVersion() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.getVersion) {
 		return this->apiFnc.getVersion();
 	} else {
@@ -225,6 +235,8 @@ Version_t Plugin::getVersion() const {
 }
 
 QString Plugin::getAuthor() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.getAuthor) {
 		return QString::fromUtf8(this->apiFnc.getAuthor());
 	} else {
@@ -233,6 +245,8 @@ QString Plugin::getAuthor() const {
 }
 
 QString Plugin::getDescription() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.getDescription) {
 		return QString::fromUtf8(this->apiFnc.getDescription());
 	} else {
@@ -241,12 +255,16 @@ QString Plugin::getDescription() const {
 }
 
 void Plugin::registerPluginID(uint32_t id) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.registerPluginID) {
 		this->apiFnc.registerPluginID(id);
 	}
 }
 
 uint32_t Plugin::getPluginFeatures() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.getPluginFeatures) {
 		return this->apiFnc.getPluginFeatures();
 	} else {
@@ -255,6 +273,8 @@ uint32_t Plugin::getPluginFeatures() const {
 }
 
 uint32_t Plugin::deactivateFeatures(uint32_t features) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.deactivateFeatures) {
 		return this->apiFnc.deactivateFeatures(features);
 	} else {
@@ -286,6 +306,8 @@ uint8_t Plugin::initPositionalData(const char **programNames, const uint64_t *pr
 
 bool Plugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
 		Vector3D& cameraAxis, QString& context, QString& identity) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.fetchPositionalData) {
 		const char *contextPtr = "";
 		const char *identityPtr = "";
@@ -323,12 +345,16 @@ void Plugin::shutdownPositionalData() {
 }
 
 void Plugin::onServerConnected(MumbleConnection_t connection) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onServerConnected) {
 		this->apiFnc.onServerConnected(connection);
 	}
 }
 
 void Plugin::onServerDisconnected(MumbleConnection_t connection) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onServerDisconnected) {
 		this->apiFnc.onServerDisconnected(connection);
 	}
@@ -336,24 +362,32 @@ void Plugin::onServerDisconnected(MumbleConnection_t connection) {
 
 void Plugin::onChannelEntered(MumbleConnection_t connection, MumbleUserID_t userID, MumbleChannelID_t previousChannelID,
 		MumbleChannelID_t newChannelID) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onChannelEntered) {
 		this->apiFnc.onChannelEntered(connection, userID, previousChannelID, newChannelID);
 	}
 }
 
 void Plugin::onChannelExited(MumbleConnection_t connection, MumbleUserID_t userID, MumbleChannelID_t channelID) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onChannelExited) {
 		this->apiFnc.onChannelExited(connection, userID, channelID);
 	}
 }
 
 void Plugin::onUserTalkingStateChanged(MumbleConnection_t connection, MumbleUserID_t userID, TalkingState_t talkingState) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onUserTalkingStateChanged) {
 		this->apiFnc.onUserTalkingStateChanged(connection, userID, talkingState);
 	}
 }
 
 bool Plugin::onReceiveData(MumbleConnection_t connection, MumbleUserID_t sender, const char *data, size_t dataLength, const char *dataID) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onReceiveData) {
 		return this->apiFnc.onReceiveData(connection, sender, data, dataLength, dataID);
 	} else {
@@ -362,6 +396,8 @@ bool Plugin::onReceiveData(MumbleConnection_t connection, MumbleUserID_t sender,
 }
 
 bool Plugin::onAudioInput(short *inputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onAudioInput) {
 		return this->apiFnc.onAudioInput(inputPCM, sampleCount, channelCount, isSpeech);
 	} else {
@@ -370,6 +406,8 @@ bool Plugin::onAudioInput(short *inputPCM, uint32_t sampleCount, uint16_t channe
 }
 
 bool Plugin::onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onAudioSourceFetched) {
 		return this->apiFnc.onAudioSourceFetched(outputPCM, sampleCount, channelCount, isSpeech, userID);
 	} else {
@@ -378,6 +416,8 @@ bool Plugin::onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16
 }
 
 bool Plugin::onAudioSourceProcessed(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onAudioSourceProcessed) {
 		return this->apiFnc.onAudioSourceProcessed(outputPCM, sampleCount, channelCount, isSpeech, userID);
 	} else {
@@ -386,6 +426,8 @@ bool Plugin::onAudioSourceProcessed(float *outputPCM, uint32_t sampleCount, uint
 }
 
 bool Plugin::onAudioOutputAboutToPlay(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.onAudioOutputAboutToPlay) {
 		return this->apiFnc.onAudioOutputAboutToPlay(outputPCM, sampleCount, channelCount, isSpeech);
 	} else {

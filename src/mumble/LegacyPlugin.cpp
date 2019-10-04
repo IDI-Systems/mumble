@@ -84,6 +84,8 @@ void LegacyPlugin::resolveFunctionPointers() {
 }
 
 QString LegacyPlugin::getName() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (!this->name.isEmpty()) {
 		return this->name;
 	} else {
@@ -92,6 +94,8 @@ QString LegacyPlugin::getName() const {
 }
 
 QString LegacyPlugin::getDescription() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (!this->description.isEmpty()) {
 		return this->description;
 	} else {
@@ -100,6 +104,8 @@ QString LegacyPlugin::getDescription() const {
 }
 
 bool LegacyPlugin::showAboutDialog(QWidget *parent) const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->mumPlugQt && this->mumPlugQt->about) {
 		this->mumPlugQt->about(parent);
 
@@ -117,6 +123,8 @@ bool LegacyPlugin::showAboutDialog(QWidget *parent) const {
 }
 
 bool LegacyPlugin::showConfigDialog(QWidget *parent) const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	if (this->mumPlugQt && this->mumPlugQt->config) {
 		this->mumPlugQt->config(parent);
 
@@ -173,6 +181,8 @@ uint8_t LegacyPlugin::initPositionalData(const char **programNames, const uint64
 
 bool LegacyPlugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
 		Vector3D& cameraAxis, QString& context, QString& identity) {
+	PluginReadLocker lock(&this->pluginLock);
+
 	std::wstring identityWstr;
 	std::string contextStr;
 
@@ -196,9 +206,13 @@ void LegacyPlugin::shutdownPositionalData() {
 }
 
 bool LegacyPlugin::providesAboutDialog() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	return this->mumPlug->about || (this->mumPlugQt && this->mumPlugQt->about);
 }
 
 bool LegacyPlugin::providesConfigDialog() const {
+	PluginReadLocker lock(&this->pluginLock);
+
 	return this->mumPlug->config || (this->mumPlugQt && this->mumPlugQt->config);
 }
