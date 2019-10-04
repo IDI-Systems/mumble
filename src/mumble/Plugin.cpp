@@ -158,11 +158,11 @@ void Plugin::enablePositionalData(bool enable) {
 MumbleError_t Plugin::init() {
 	QWriteLocker lock(&this->pluginLock);
 
-	if (pluginIsLoaded) {
+	if (this->pluginIsLoaded) {
 		return STATUS_OK;
 	}
 
-	pluginIsLoaded = true;
+	this->pluginIsLoaded = true;
 
 	if (this->apiFnc.init) {
 		return this->apiFnc.init();
@@ -175,13 +175,16 @@ MumbleError_t Plugin::init() {
 void Plugin::shutdown() {
 	QWriteLocker lock(&this->pluginLock);
 
-	if (!pluginIsLoaded) {
+	if (!this->pluginIsLoaded) {
 		return;
 	}
 
-	pluginIsLoaded = false;
+	this->pluginIsLoaded = false;
 
-	// TODO: check PA and maybe shutdown as well
+	if (this->positionalDataIsActive) {
+		this->shutdownPositionalData();
+	}
+
 	if (this->apiFnc.shutdown) {
 		this->shutdown();
 	}
