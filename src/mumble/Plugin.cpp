@@ -471,7 +471,7 @@ void PluginReadLocker::unlock() {
 		return;
 	}
 
-	this->lock->unlock;
+	this->lock->unlock();
 }
 
 void PluginReadLocker::relock() {
