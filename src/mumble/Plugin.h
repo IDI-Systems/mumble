@@ -87,7 +87,7 @@ class Plugin : public QObject {
 		mutable QReadWriteLock pluginLock;
 		PluginAPIFunctions apiFnc;
 		bool isBuiltIn;
-		bool isPosDataEnabled;
+		bool positionalDataIsEnabled;
 
 		virtual bool doInitialize();
 		virtual void resolveFunctionPointers();
