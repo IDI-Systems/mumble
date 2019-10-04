@@ -218,7 +218,6 @@ void Plugin::registerAPIFunctions(const MumbleAPI *api) {
 	}
 }
 
-
 void Plugin::setMumbleInfo(Version_t mumbleVersion, Version_t mumbleAPIVersion, Version_t minimalExpectedAPIVersion) {
 	PluginReadLocker lock(&this->pluginLock);
 
