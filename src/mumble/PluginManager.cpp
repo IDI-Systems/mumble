@@ -139,6 +139,9 @@ void getProgramPIDs(QMultiMap<QString, unsigned long long int>& pids) {
 			pids.insert(baseName, pid);
 		}
 	}
+#else
+	g.l->log(Log::Warning, QString::fromUtf8("Retrieval of program names and PIDs only implemented for Windows and Linux"));
+	Q_UNUSED(pids);
 #endif
 }
 
