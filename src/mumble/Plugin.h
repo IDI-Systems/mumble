@@ -92,6 +92,7 @@ class Plugin : public QObject {
 
 		virtual bool doInitialize();
 		virtual void resolveFunctionPointers();
+		virtual void registerPluginID();
 
 	public:
 		virtual ~Plugin() Q_DECL_OVERRIDE;
@@ -135,7 +136,6 @@ class Plugin : public QObject {
 		virtual Version_t getVersion() const;
 		virtual QString getAuthor() const;
 		virtual QString getDescription() const;
-		virtual void registerPluginID(uint32_t id);
 		virtual uint32_t getPluginFeatures() const;
 		virtual uint32_t deactivateFeatures(uint32_t features);
 		virtual bool showAboutDialog(QWidget *parent) const;

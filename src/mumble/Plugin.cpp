@@ -262,11 +262,11 @@ QString Plugin::getDescription() const {
 	}
 }
 
-void Plugin::registerPluginID(uint32_t id) {
+void Plugin::registerPluginID() {
 	PluginReadLocker lock(&this->pluginLock);
 
 	if (this->apiFnc.registerPluginID) {
-		this->apiFnc.registerPluginID(id);
+		this->apiFnc.registerPluginID(this->pluginID);
 	}
 }
 
