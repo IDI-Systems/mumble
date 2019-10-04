@@ -102,6 +102,7 @@ class Plugin : public QObject {
 		virtual QString getFilePath() const;
 		virtual bool isPositionalDataEnabled() const Q_DECL_FINAL;
 		virtual void enablePositionalData(bool enable = true);
+		virtual bool isPositionalDataActive() const Q_DECL_FINAL;
 
 		// template for a factory-method which is needed to ensure that every Plugin object will always
 		// be initialized be the right call to its init() functions (if overwritten by a child-class, then

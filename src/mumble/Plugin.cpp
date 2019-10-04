@@ -155,6 +155,12 @@ void Plugin::enablePositionalData(bool enable) {
 	this->positionalDataIsEnabled = enable;
 }
 
+bool Plugin::isPositionalDataActive() const {
+	PluginReadLocker lock(&this->pluginLock);
+
+	return this->positionalDataIsActive;
+}
+
 MumbleError_t Plugin::init() {
 	QWriteLocker lock(&this->pluginLock);
 
