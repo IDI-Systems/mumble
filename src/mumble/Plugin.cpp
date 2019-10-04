@@ -170,12 +170,19 @@ MumbleError_t Plugin::init() {
 
 	this->pluginIsLoaded = true;
 
+	// TODO: call setMumbleInfo as well
+
+	MumbleError_t retStatus;
 	if (this->apiFnc.init) {
-		return this->apiFnc.init();
+		retStatus = this->apiFnc.init();
 	} else {
 		// If there's no such function nothing can go wrong because nothing was called
-		return STATUS_OK;
+		retStatus = STATUS_OK;
 	}
+
+	this->registerPluginID();
+
+	return retStatus;
 }
 
 void Plugin::shutdown() {
