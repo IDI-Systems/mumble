@@ -11,7 +11,8 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfoList>
 #include <QtCore/QFileInfo>
-#include <QtCore/QScopedArrayPointer>
+#include <QtCore/QVector>
+#include <QtCore/QByteArray>
 
 #include "ManualPlugin.h"
 #include "Log.h"
@@ -78,7 +79,7 @@ void PluginManager::clearPlugins() {
 /// Fills the given map with currently running programs by adding their PID and their name
 ///
 /// @param[out] pids The QMultiMap to write the gathered info to
-void getProgramPIDs(QMultiMap<QString, unsigned long long int>& pids) {
+void getProgramPIDs(QVector<QString>& names, QVector<uint64_t>& pids) {
 #if defined(Q_OS_WIN)
 	PROCESSENTRY32 pe;
 
@@ -88,7 +89,8 @@ void getProgramPIDs(QMultiMap<QString, unsigned long long int>& pids) {
 		BOOL ok = Process32First(hSnap, &pe);
 
 		while (ok) {
-			pids.insert(QString::fromStdWString(std::wstring(pe.szExeFile)), pe.th32ProcessID);
+			names.append(QString::fromStdWString(std::wstring(pe.szExeFile)));
+			pids.append(pe.th32ProcessID);
 			ok = Process32Next(hSnap, &pe);
 		}
 		CloseHandle(hSnap);
@@ -139,11 +141,13 @@ void getProgramPIDs(QMultiMap<QString, unsigned long long int>& pids) {
 		}
 
 		if (!baseName.isEmpty()) {
-			pids.insert(baseName, pid);
+			names.append(baseName);
+			pids.append(pid);
 		}
 	}
 #else
 	g.l->log(Log::Warning, QString::fromUtf8("Retrieval of program names and PIDs only implemented for Windows and Linux"));
+	Q_UNUSED(names);
 	Q_UNUSED(pids);
 #endif
 }
@@ -161,21 +165,23 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 	}
 
 	// gather PIDs and names of currently running programs
-	QMultiMap<QString, unsigned long long int> pidMap;
-	getProgramPIDs(pidMap);
+	QVector<QString> qNames;
+	QVector<uint64_t> pids;
 
-	QScopedArrayPointer<const char*> names(new const char*[pidMap.size()]);
-	QScopedArrayPointer<uint64_t> pids(new uint64_t[pidMap.size()]);
+	getProgramPIDs(qNames, pids);
 
-	unsigned int index = 0;
-	// split the MultiMap into the two arrays
-	QMultiMap<QString, unsigned long long int>::const_iterator pidIter = pidMap.constBegin();
-	while (pidIter != pidMap.constEnd()) {
-		names[index] = pidIter.key().toUtf8().constData();
-		pids[index] = pidIter.value();
+	// convert the vector of QStrings to a vector of const char*
+	QVector<const char*> names;
+	names.reserve(qNames.size());
+	QVector<QByteArray> bytes;
+	bytes.reserve(qNames.size());
 
-		pidIter++;
-		index++;
+	foreach(const QString& currentName, qNames) {
+		// We have to store the ByteArray in order for the retrieved pointers to remain valid even after exiting the scope of this
+		// foreach
+		QByteArray currentBytes = currentName.toUtf8();
+		bytes.append(currentBytes);
+		names.append(currentBytes.constData());
 	}
 
 	QHash<uint32_t, QSharedPointer<Plugin>>::iterator it = this->pluginHashMap.begin();
@@ -186,7 +192,7 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 		QSharedPointer<Plugin> currentPlugin = it.value();
 
 		if (currentPlugin->isPositionalDataEnabled()) {
-			switch(currentPlugin->initPositionalData(names.data(), pids.data(), pidMap.size())) {
+			switch(currentPlugin->initPositionalData(names.data(), pids.data(), pids.size())) {
 				case PDEC_OK:
 					// the plugin is ready to provide positional data
 					this->activePositionalDataPlugin = currentPlugin;
