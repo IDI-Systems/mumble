@@ -17,7 +17,6 @@
 #include "Log.h"
 
 #ifdef Q_OS_WIN
-	#include "win.h"
 	#include <tlhelp32.h>
 	#include <string>
 #endif
