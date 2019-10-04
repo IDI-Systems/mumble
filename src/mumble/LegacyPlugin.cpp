@@ -134,6 +134,8 @@ bool LegacyPlugin::showConfigDialog(QWidget *parent) const {
 }
 
 uint8_t LegacyPlugin::initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount) {
+	PluginReadLocker rLock(&this->pluginLock);
+
 	int retCode;
 
 	if (this->mumPlug2) {
@@ -156,6 +158,11 @@ uint8_t LegacyPlugin::initPositionalData(const char **programNames, const uint64
 	// ensure that only expected return codes are being returned from this function
 	// the legacy plugins return 1 on successfull locking and 0 on failure
 	if (retCode) {
+		rLock.unlock;
+		QWriteLocker wLock(&this->pluginLock);
+
+		this->positionalDataIsActive = true;
+
 		return PDEC_OK;
 	} else {
 		// legacy plugins don't have the concept of indicating a permanent error
@@ -181,6 +188,10 @@ bool LegacyPlugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDi
 }
 
 void LegacyPlugin::shutdownPositionalData() {
+	QWriteLocker lock(&this->pluginLock);
+
+	this->positionalDataIsActive = false;
+
 	this->mumPlug->unlock();
 }
 
