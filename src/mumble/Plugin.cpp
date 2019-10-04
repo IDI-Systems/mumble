@@ -14,7 +14,7 @@ QMutex Plugin::idLock(QMutex::Recursive);
 
 
 Plugin::Plugin(QString path, bool isBuiltIn, QObject *p) : QObject(p), lib(path), pluginPath(path), pluginIsLoaded(false), pluginLock(QReadWriteLock::Recursive),
-	apiFnc(), isBuiltIn(isBuiltIn), positionalDataIsEnabled(false) {
+	apiFnc(), isBuiltIn(isBuiltIn), positionalDataIsEnabled(false), positionalDataIsActive(false) {
 	// See if the plugin is loadable in the first place unless it is a built-in plugin
 	pluginIsValid = isBuiltIn || lib.load();
 
@@ -273,7 +273,11 @@ bool Plugin::showConfigDialog(QWidget *parent) const {
 }
 
 uint8_t Plugin::initPositionalData(const char **programNames, const uint64_t *programPIDs, size_t programCount) {
+	QWriteLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.initPositionalData) {
+		this->positionalDataIsActive = true;
+
 		return this->apiFnc.initPositionalData(programNames, programPIDs, programCount);
 	} else {
 		return PDEC_ERROR_PERM;
@@ -309,7 +313,11 @@ bool Plugin::fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vec
 }
 
 void Plugin::shutdownPositionalData() {
+	QWriteLocker lock(&this->pluginLock);
+
 	if (this->apiFnc.shutdownPositionalData) {
+		this->positionalDataIsActive = false;
+
 		this->apiFnc.shutdownPositionalData();
 	}
 }

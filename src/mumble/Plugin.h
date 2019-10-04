@@ -88,6 +88,7 @@ class Plugin : public QObject {
 		PluginAPIFunctions apiFnc;
 		bool isBuiltIn;
 		bool positionalDataIsEnabled;
+		bool positionalDataIsActive;
 
 		virtual bool doInitialize();
 		virtual void resolveFunctionPointers();
