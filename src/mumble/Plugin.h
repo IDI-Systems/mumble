@@ -64,6 +64,8 @@ class PluginReadLocker {
 		QReadWriteLock *lock;
 	public:
 		PluginReadLocker(QReadWriteLock *lock);
+		void relock();
+		void unlock();
 		~PluginReadLocker();
 };
 

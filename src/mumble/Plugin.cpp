@@ -397,23 +397,36 @@ bool Plugin::providesConfigDialog() const {
 
 /////////////////// Implementation of the PluginReadLocker /////////////////////////
 PluginReadLocker::PluginReadLocker(QReadWriteLock *lock) : lock(lock) {
-	if (!lock) {
+	this->relock();
+}
+
+void PluginReadLocker::unlock() {
+	if (!this->lock) {
+		// do nothgin for nullptr
+		return;
+	}
+
+	this->lock->unlock;
+}
+
+void PluginReadLocker::relock() {
+	if (!this->lock) {
 		// do nothing for a nullptr
 		return;
 	}
 
 	// First try to lock for read-access
-	if (!lock->tryLockForRead()) {
+	if (!this->lock->tryLockForRead()) {
 		// if that fails, we'll try to lock for write-access
 		// That will only succeed in the case that the current thread holds the write-access to this lock already which caused
 		// the previous attempt to lock for reading to fail (by design of the QtReadWriteLock).
 		// As we are in the thread with the write-access, it means that this threads has asked for read-access on top of it which we will
 		// grant (in contrast of QtReadLocker) because if you have the permission to change something you surely should have permission
 		// to read it. This assumes that the thread won't try to read data it temporarily has corrupted.
-		if (!lock->tryLockForWrite()) {
+		if (!this->lock->tryLockForWrite()) {
 			// If we couldn't lock for write at this point, it means another thread has write-access granted by the lock so we'll have to wait
 			// in order to gain regular read-access as would be with QtReadLocker
-			lock->lockForRead();
+			this->lock->lockForRead();
 		}
 	}
 }
