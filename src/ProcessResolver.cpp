@@ -128,6 +128,10 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 #elif defined(Q_OS_LINUX)
 	// Implementation for Linux
 	#include <cstdlib>
+	#include <cstring>
+	#include <QtCore/QFile>
+	#include <QtCore/QByteArray>
+	#include <QtCore/QString>
 
 	#include <dirent.h>
 #ifndef QT_NO_DEBUG
@@ -191,6 +195,39 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 			}
 
 			const char *programName = basename(path);
+
+			if (std::strcmp(programName, "wine-preloader") == 0 || std::strcmp(programName, "wine64-preloader") == 0) {
+				// special treatment for windows-programs running under wine on Linux
+				// Here we'll get the command-line args of the wine-preloader in order to determine the actual program name
+				QFile f(QString::fromUtf8(PROC_DIR) + QString::number(pid) + QString::fromUtf8("/cmdline"));
+
+				if (f.open(QIODevice::ReadOnly)) {
+					QByteArray cmdline = f.readAll();
+					f.close();
+
+					int nul = cmdline.indexOf('\0');
+					if (nul != -1) {
+						cmdline.truncate(nul);
+					}
+
+					QString exe = QString::fromUtf8(cmdline);
+					if (exe.contains(QLatin1String("\\"))) {
+						int lastBackslash = exe.lastIndexOf(QLatin1String("\\"));
+						if (exe.count() > lastBackslash + 1) {
+							QString wineProgramName = exe.mid(lastBackslash + 1);
+
+							// add name
+							addName(wineProgramName.toUtf8().data(), this->processNames);
+
+							// add corresponding PID
+							this->processPIDs.append(pid);
+
+							// Skip to the next entry
+							continue;
+						}
+					}
+				}
+			}
 			
 			// add name
 			addName(programName, this->processNames);
