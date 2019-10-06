@@ -33,6 +33,8 @@ class ProcessResolver {
 		const QVector<const char*>& getProcessNames() const;
 		/// Gets a reference to the stored process PIDs (corresponding to the names returned by ProcessResolver::getProcessNames())
 		const QVector<uint64_t>& getProcessPIDs() const;
+		/// @returns The amount of processes that have been resolved by this object
+		size_t amountOfProcesses() const;
 };
 
 #endif

@@ -41,6 +41,10 @@ void ProcessResolver::resolve() {
 	this->doResolve();
 }
 
+size_t ProcessResolver::amountOfProcesses() const {
+	return this->processPIDs.size();
+}
+
 
 /// Helper function to add a name stored as a stack-variable to the given vector
 ///
