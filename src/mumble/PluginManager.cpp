@@ -16,6 +16,7 @@
 
 #include "ManualPlugin.h"
 #include "Log.h"
+#include "ProcessResolver.h"
 
 #ifdef Q_OS_WIN
 	#include <tlhelp32.h>
@@ -76,82 +77,6 @@ void PluginManager::clearPlugins() {
 	pluginHashMap.clear();
 }
 
-/// Fills the given map with currently running programs by adding their PID and their name
-///
-/// @param[out] pids The QMultiMap to write the gathered info to
-void getProgramPIDs(QVector<QString>& names, QVector<uint64_t>& pids) {
-#if defined(Q_OS_WIN)
-	PROCESSENTRY32 pe;
-
-	pe.dwSize = sizeof(pe);
-	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hSnap != INVALID_HANDLE_VALUE) {
-		BOOL ok = Process32First(hSnap, &pe);
-
-		while (ok) {
-			names.append(QString::fromStdWString(std::wstring(pe.szExeFile)));
-			pids.append(pe.th32ProcessID);
-			ok = Process32Next(hSnap, &pe);
-		}
-		CloseHandle(hSnap);
-	}
-#elif defined(Q_OS_LINUX)
-	QDir d(QLatin1String("/proc"));
-	QStringList entries = d.entryList();
-	bool ok;
-	foreach (const QString &entry, entries) {
-		// Check if the entry is a PID
-		// by checking whether it's a number.
-		// If it is not, skip it.
-		unsigned long long int pid = static_cast<unsigned long long int>(entry.toLongLong(&ok, 10));
-		if (!ok) {
-			continue;
-		}
-
-		QString exe = QFile::symLinkTarget(QString(QLatin1String("/proc/%1/exe")).arg(entry));
-		QFileInfo fi(exe);
-		QString firstPart = fi.baseName();
-		QString completeSuffix = fi.completeSuffix();
-		QString baseName;
-		if (completeSuffix.isEmpty()) {
-			baseName = firstPart;
-		} else {
-			baseName = firstPart + QLatin1String(".") + completeSuffix;
-		}
-
-		if (baseName == QLatin1String("wine-preloader") || baseName == QLatin1String("wine64-preloader")) {
-			QFile f(QString(QLatin1String("/proc/%1/cmdline")).arg(entry));
-			if (f.open(QIODevice::ReadOnly)) {
-				QByteArray cmdline = f.readAll();
-				f.close();
-
-				int nul = cmdline.indexOf('\0');
-				if (nul != -1) {
-					cmdline.truncate(nul);
-				}
-
-				QString exe = QString::fromUtf8(cmdline);
-				if (exe.contains(QLatin1String("\\"))) {
-					int lastBackslash = exe.lastIndexOf(QLatin1String("\\"));
-					if (exe.count() > lastBackslash + 1) {
-						baseName = exe.mid(lastBackslash + 1);
-					}
-				}
-			}
-		}
-
-		if (!baseName.isEmpty()) {
-			names.append(baseName);
-			pids.append(pid);
-		}
-	}
-#else
-	g.l->log(Log::Warning, QString::fromUtf8("Retrieval of program names and PIDs only implemented for Windows and Linux"));
-	Q_UNUSED(names);
-	Q_UNUSED(pids);
-#endif
-}
-
 bool PluginManager::selectActivePositionalDataPlugin() {
 	QReadLocker pluginLock(&this->pluginCollectionLock);
 	QWriteLocker activePluginLock(&this->activePosDataPluginLock);
@@ -164,25 +89,7 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 		return false;
 	}
 
-	// gather PIDs and names of currently running programs
-	QVector<QString> qNames;
-	QVector<uint64_t> pids;
-
-	getProgramPIDs(qNames, pids);
-
-	// convert the vector of QStrings to a vector of const char*
-	QVector<const char*> names;
-	names.reserve(qNames.size());
-	QVector<QByteArray> bytes;
-	bytes.reserve(qNames.size());
-
-	foreach(const QString& currentName, qNames) {
-		// We have to store the ByteArray in order for the retrieved pointers to remain valid even after exiting the scope of this
-		// foreach
-		QByteArray currentBytes = currentName.toUtf8();
-		bytes.append(currentBytes);
-		names.append(currentBytes.constData());
-	}
+	ProcessResolver procRes(true);
 
 	QHash<uint32_t, QSharedPointer<Plugin>>::iterator it = this->pluginHashMap.begin();
 
@@ -192,7 +99,10 @@ bool PluginManager::selectActivePositionalDataPlugin() {
 		QSharedPointer<Plugin> currentPlugin = it.value();
 
 		if (currentPlugin->isPositionalDataEnabled()) {
-			switch(currentPlugin->initPositionalData(names.data(), pids.data(), pids.size())) {
+			// The const_cast is okay as it only removes the constness of the pointer itself. Since it is passed by value
+			// changes made to the pointer won't affect us anyways thus justifying the const_cast
+			switch(currentPlugin->initPositionalData(const_cast<const char**>(procRes.getProcessNames().data()),
+						procRes.getProcessPIDs().data(), procRes.amountOfProcesses())) {
 				case PDEC_OK:
 					// the plugin is ready to provide positional data
 					this->activePositionalDataPlugin = currentPlugin;
