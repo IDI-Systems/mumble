@@ -73,10 +73,7 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 	#include <tlhelp32.h>
 	#include <limits>
 
-	bool utf16ToUtf8(const wchar_t *source, const size_t size, char *destination) {
-		// WideCharToMultiByte takes the size as an int so we must not provide a size that exceeds an int's range
-		assert(size <= static_cast<size_t>(std::numeric_limits<int>::max()));
-
+	bool utf16ToUtf8(const wchar_t *source, const int size, char *destination) {
 		if (!WideCharToMultiByte(CP_UTF8, 0, source, -1, destination, size, NULL, NULL)) {
 #ifndef QT_NO_DEBUG
 			qCritical("ProcessResolver: WideCharToMultiByte() failed with error %d\n", GetLastError());
