@@ -784,6 +784,16 @@ CONFIG(static_qt_plugins) {
   LIBS *= -L$$[QT_INSTALL_PLUGINS]/iconengines
 }
 
+# On FreeBSD we need the util library for src/ProcessResolver.cpp to work
+freebsd {
+	LIBS *= -lutil
+}
+
+# On any other BSD we need the kvm library for src/ProcessResolver.cpp to work
+!freebsd:bsd {
+	LIBS *= -lkvm
+}
+
 lrel.output = ${QMAKE_FILE_BASE}.qm
 lrel.commands = $${QMAKE_LRELEASE} ${QMAKE_FILE_NAME}
 lrel.input = TRANSLATIONS
