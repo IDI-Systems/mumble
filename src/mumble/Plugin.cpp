@@ -4,6 +4,7 @@
 // Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
 #include "Plugin.h"
+#include "Version.h"
 #include <QtCore/QWriteLocker>
 #include <QtCore/QMutexLocker>
 
@@ -170,7 +171,12 @@ MumbleError_t Plugin::init() {
 
 	this->pluginIsLoaded = true;
 
-	// TODO: call setMumbleInfo as well
+	// Get Mumble version
+	int mumbleMajor, mumbleMinor, mumblePatch;
+	MumbleVersion::get(&mumbleMajor, &mumbleMinor, &mumblePatch);
+
+	// Require API version 1.0.0 as the minimal supported one
+	this->setMumbleInfo({ mumbleMajor, mumbleMinor, mumblePatch }, MUMBLE_PLUGIN_API_VERSION, { 1, 0, 0 });
 
 	MumbleError_t retStatus;
 	if (this->apiFnc.init) {
