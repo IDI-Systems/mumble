@@ -101,7 +101,7 @@ HEADERS *= BanEditor.h \
     UserModel.h \
     Audio.h \
     ConfigDialog.h \
-    Plugins.h \
+    PluginConfig.h \
 	Plugin.h \
 	LegacyPlugin.h \
 	PluginManager.h \
@@ -176,7 +176,7 @@ SOURCES *= BanEditor.cpp \
     UserModel.cpp \
     Audio.cpp \
     ConfigDialog.cpp \
-    Plugins.cpp \
+    PluginConfig.cpp \
 	Plugin.cpp \
 	LegacyPlugin.cpp \
 	PluginManager.cpp \
@@ -245,7 +245,7 @@ FORMS *= ConfigDialog.ui \
     ConnectDialogEdit.ui \
     BanEditor.ui \
     ACLEditor.ui \
-    Plugins.ui \
+    PluginConfig.ui \
     PTTButtonWidget.ui \
     Overlay.ui \
     OverlayEditor.ui \

@@ -6,7 +6,6 @@
 #include "DirectSound.h"
 
 #include "MainWindow.h"
-#include "Plugins.h"
 #include "User.h"
 
 #include "win.h"

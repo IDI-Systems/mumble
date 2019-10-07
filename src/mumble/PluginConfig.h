@@ -7,7 +7,7 @@
 #define MUMBLE_MUMBLE_PLUGINS_H_
 
 #include "ConfigDialog.h"
-#include "ui_Plugins.h"
+#include "ui_PluginConfig.h"
 #include "Plugin.h"
 
 #ifdef Q_OS_WIN

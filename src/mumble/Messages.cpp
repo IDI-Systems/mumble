@@ -17,7 +17,6 @@
 #include "Log.h"
 #include "MainWindow.h"
 #include "Overlay.h"
-#include "Plugins.h"
 #include "ServerHandler.h"
 #include "User.h"
 #include "UserEdit.h"
