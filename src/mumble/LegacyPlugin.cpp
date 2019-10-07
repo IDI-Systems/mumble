@@ -205,6 +205,10 @@ void LegacyPlugin::shutdownPositionalData() {
 	this->mumPlug->unlock();
 }
 
+uint32_t LegacyPlugin::getPluginFeatures() const {
+	return FEATURE_POSITIONAL;
+}
+
 bool LegacyPlugin::providesAboutDialog() const {
 	PluginReadLocker lock(&this->pluginLock);
 

@@ -41,6 +41,7 @@ class LegacyPlugin : public Plugin {
 		virtual bool fetchPositionalData(Position3D& avatarPos, Vector3D& avatarDir, Vector3D& avatarAxis, Position3D& cameraPos, Vector3D& cameraDir,
 				Vector3D& cameraAxis, QString& context, QString& identity) Q_DECL_OVERRIDE;
 		virtual void shutdownPositionalData() Q_DECL_OVERRIDE;
+		virtual uint32_t getPluginFeatures() const Q_DECL_OVERRIDE;
 
 		// functions for checking which underlying plugin functions are implemented
 		virtual bool providesAboutDialog() const Q_DECL_OVERRIDE;
