@@ -296,6 +296,7 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 
 	#include <fcntl.h>
 	#include <kvm.h>
+	#include <paths.h>
 	#include <sys/sysctl.h>
 	#include <sys/user.h>
 
@@ -312,7 +313,12 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 
 	void ProcessResolver::doResolve() {
 		char error[_POSIX2_LINE_MAX];
-		kvm_t *kd = kvm_open2(NULL, NULL, O_RDONLY, error, NULL);
+#ifdef KVM_NO_FILES
+		kvm_t *kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, error);
+#else
+		kvm_t *kd = kvm_openfiles(NULL, _PATH_DEVNULL, NULL, O_RDONLY, error);
+#endif
+
 		if (!kd) {
 #ifndef QT_NO_DEBUG
 			qCritical("ProcessResolver: kvm_open2() failed with error: %s\n", error);
