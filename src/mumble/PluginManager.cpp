@@ -13,6 +13,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QVector>
 #include <QtCore/QByteArray>
+#include <QtCore/QChar>
 
 #include "ManualPlugin.h"
 #include "Log.h"
@@ -240,6 +241,9 @@ bool PluginManager::fetchPositionalData() {
 	bool retStatus = this->activePositionalDataPlugin->fetchPositionalData(this->positionalData.playerPos, this->positionalData.playerDir,
 		this->positionalData.playerAxis, this->positionalData.cameraPos, this->positionalData.cameraDir, this->positionalData.cameraAxis,
 			this->positionalData.context, this->positionalData.identity);
+
+	// Add the plugin's name to the context as well to prevent name-clashes between plugins
+	this->positionalData.context = this->activePositionalDataPlugin->getName() + QChar::Null + this->positionalData.context;
 
 	if (!retStatus) {
 		// Shut the currently active plugin down and set a new one (if available)
