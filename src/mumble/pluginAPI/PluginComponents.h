@@ -73,6 +73,13 @@ typedef int32_t MumbleChannelID_t;
 typedef enum ErrorCode MumbleError_t;
 
 
+// API version
+const int32_t MUMBLE_PLUGIN_API_MAJOR = 1;
+const int32_t MUMBLE_PLUGIN_API_MINOR = 0;
+const int32_t MUMBLE_PLUGIN_API_PATCH = 0;
+const Version_t MUMBLE_PLUGIN_API_VERSION = { MUMBLE_PLUGIN_API_MAJOR, MUMBLE_PLUGIN_API_MINOR, MUMBLE_PLUGIN_API_PATCH };
+
+
 struct MumbleAPI {
 	// -------- Memory management --------
 	
