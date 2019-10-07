@@ -131,80 +131,42 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 	}
 #elif defined(Q_OS_LINUX)
 	// Implementation for Linux
-	#include <cstdlib>
-	#include <cstring>
 	#include <QtCore/QFile>
+	#include <QtCore/QDir>
+	#include <QtCore/QStringList>
+	#include <QtCore/QFileInfo>
 	#include <QtCore/QByteArray>
 	#include <QtCore/QString>
 
-	#include <dirent.h>
-#ifndef QT_NO_DEBUG
-	#include <errno.h>
-#endif
-	#include <libgen.h>
-	#include <linux/limits.h>
-	#include <sys/stat.h>
 
 	#define PROC_DIR "/proc/"
-	#define EXE_LINK "/exe"
-
-	bool getlinkedpath(const char *linkpath, char *linkedpath) {
-		if (!realpath(linkpath, linkedpath)) {
-#ifndef QT_NO_DEBUG
-			qCritical("ProcessResolve: realpath() failed with error %d\n", errno);
-#endif
-			return false;
-		}
-
-		return true;
-	}
 
 	void ProcessResolver::doResolve() {
-		DIR *dir = opendir(PROC_DIR);
-		if (dir == NULL) {
-#ifndef QT_NO_DEBUG
-			qCritical("ProcessResolver: opendir() failed with error %d", errno);
-#endif
-			return;
-		}
+		QDir procDir(QString::fromUtf8(PROC_DIR));
+		QStringList entries = procDir.entryList();
 
-		struct dirent *de;
-		while ((de = readdir(dir))) {
-			// The name of the "dir" represents the PID of the process
-			uint64_t pid;
-			try {
-				pid = std::stoull(de->d_name);
-			} catch(const std::invalid_argument& e) {
-				// if the name can't be converted to a PID, we will ignore this process
-				Q_UNUSED(e);
+		bool ok;
 
+		foreach(const QString& currentEntry, entries) {
+			uint64_t pid = static_cast<unsigned long long int>(currentEntry.toLongLong(&ok, 10));
+
+			if (!ok) {
 				continue;
 			}
 
-			char exelinkpath[PATH_MAX];
-			snprintf(exelinkpath, sizeof(exelinkpath), "%s%s%s", PROC_DIR, de->d_name, EXE_LINK);
-
-			struct stat st;
-			if (stat(exelinkpath, &st) == -1) {
-				// Either the file doesn't exist or it's not accessible.
-				continue;
+			QString exe = QFile::symLinkTarget(QString::fromUtf8(PROC_DIR) + currentEntry + QString::fromUtf8("/exe"));
+			QFileInfo fi(exe);
+			QString firstPart = fi.baseName();
+			QString completeSuffix = fi.completeSuffix();
+			QString baseName;
+			if (completeSuffix.isEmpty()) {
+				baseName = firstPart;
+			} else {
+				baseName = firstPart + QLatin1String(".") + completeSuffix;
 			}
 
-			char path[PATH_MAX];
-			if (!getlinkedpath(exelinkpath, path)) {
-#ifndef QT_NO_DEBUG
-				qWarning("ProcessResolver: getlinkedpath() failed, skipping entry...");
-#endif
-				continue;
-			}
-
-			const char *programName = basename(path);
-
-			if (std::strcmp(programName, "wine-preloader") == 0 || std::strcmp(programName, "wine64-preloader") == 0) {
-				// special treatment for windows-programs running under wine on Linux
-				// Here we'll get the command-line args of the wine-preloader in order to determine the actual program name
-				QFile f(QString::fromUtf8(PROC_DIR) + QString::number(pid) + QString::fromUtf8("/cmdline"));
-
+			if (baseName == QLatin1String("wine-preloader") || baseName == QLatin1String("wine64-preloader")) {
+				QFile f(QString::fromUtf8(PROC_DIR) + currentEntry + QString::fromUtf8("/cmdline"));
 				if (f.open(QIODevice::ReadOnly)) {
 					QByteArray cmdline = f.readAll();
 					f.close();
@@ -218,29 +180,20 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 					if (exe.contains(QLatin1String("\\"))) {
 						int lastBackslash = exe.lastIndexOf(QLatin1String("\\"));
 						if (exe.count() > lastBackslash + 1) {
-							QString wineProgramName = exe.mid(lastBackslash + 1);
-
-							// add name
-							addName(wineProgramName.toUtf8().data(), this->processNames);
-
-							// add corresponding PID
-							this->processPIDs.append(pid);
-
-							// Skip to the next entry
-							continue;
+							baseName = exe.mid(lastBackslash + 1);
 						}
 					}
 				}
 			}
-			
-			// add name
-			addName(programName, this->processNames);
 
-			// add corresponding PID
-			this->processPIDs.append(pid);
+			if (!baseName.isEmpty()) {
+				// add name
+				addName(baseName.toUtf8().data(), this->processNames);
+
+				// add corresponding PID
+				this->processPIDs.append(pid);
+			}
 		}
-
-		closedir(dir);
 	}
 #elif defined(Q_OS_MACOS)
 	// Implementation for MacOS
