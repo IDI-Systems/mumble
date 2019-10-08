@@ -160,10 +160,14 @@ void Channel::addUser(User *p) {
 		p->cChannel->removeUser(p);
 	p->cChannel = this;
 	qlUsers << p;
+
+	emit channelEntered(this, p);
 }
 
 void Channel::removeUser(User *p) {
 	qlUsers.removeAll(p);
+
+	emit channelExited(this, p);
 }
 
 Channel::operator QString() const {
