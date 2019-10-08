@@ -441,6 +441,13 @@ int main(int argc, char **argv) {
 	// Initialize bonjour
 	g.bc = new BonjourClient();
 #endif
+	
+	// PluginManager
+	g.pluginManager = new PluginManager();
+	g.pluginManager->rescanPlugins();
+
+	qDebug() << "PluginManager created";
+
 
 	//TODO: This already loads up the DLL and does some initial hooking, even
 	// when the OL is disabled. This should either not be done (object instantiation)
@@ -474,10 +481,6 @@ int main(int argc, char **argv) {
 	SocketRPC *srpc = new SocketRPC(QLatin1String("Mumble"));
 
 	g.l->log(Log::Information, MainWindow::tr("Welcome to Mumble."));
-
-	// PluginManager
-	g.pluginManager = new PluginManager();
-	g.pluginManager->rescanPlugins();
 
 	Audio::start();
 
