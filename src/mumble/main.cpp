@@ -446,9 +446,6 @@ int main(int argc, char **argv) {
 	g.pluginManager = new PluginManager();
 	g.pluginManager->rescanPlugins();
 
-	qDebug() << "PluginManager created";
-
-
 	//TODO: This already loads up the DLL and does some initial hooking, even
 	// when the OL is disabled. This should either not be done (object instantiation)
 	// or the dll loading and preparation be delayed to first use.
