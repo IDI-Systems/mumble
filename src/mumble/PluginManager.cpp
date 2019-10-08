@@ -19,6 +19,8 @@
 #include "Log.h"
 #include "ProcessResolver.h"
 
+#include "ServerHandler.h"
+
 #ifdef Q_OS_WIN
 	#include <tlhelp32.h>
 	#include <string>
@@ -317,4 +319,134 @@ const QVector<QSharedPointer<const Plugin> > PluginManager::getPlugins(bool sort
 	}
 
 	return pluginList;
+}
+
+void PluginManager::foreachPlugin(std::function<void(Plugin&)> pluginProcessor) const {
+	QReadLocker lock(&this->pluginCollectionLock);
+
+	QHash<uint32_t, QSharedPointer<Plugin>>::const_iterator it = this->pluginHashMap.constBegin();
+
+	while (it != this->pluginHashMap.constEnd()) {
+		pluginProcessor(*it.value());
+
+		it++;
+	}
+}
+
+void PluginManager::on_serverConnected() const {
+	const MumbleConnection_t connectionID = g.sh->getConnectionID();
+
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug("PluginManager: Connected to a server with connection ID %d", connectionID);
+#endif
+
+	this->foreachPlugin([connectionID](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onServerConnected(connectionID);
+		}
+	});
+}
+
+void PluginManager::on_serverDisconnected() const {
+	const MumbleConnection_t connectionID = g.sh->getConnectionID();
+
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug("PluginManager: Disconnected from a server with connection ID %d", connectionID);
+#endif
+
+	this->foreachPlugin([connectionID](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onServerConnected(connectionID);
+		}
+	});
+}
+
+void PluginManager::on_channelEntered(const Channel *channel, const User *user) const {
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug() << "PluginManager: User" << user->qsName <<  "entered channel" << channel->qsName << "- ID:" << channel->iId;
+#endif
+
+	const Channel *prevChannel = user->cChannel;
+	const MumbleConnection_t connectionID = g.sh->getConnectionID();
+
+	this->foreachPlugin([user, channel, prevChannel, connectionID](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onChannelEntered(connectionID, user->iId, prevChannel ? prevChannel->iId : -1, channel->iId);
+		}
+	});
+}
+
+void PluginManager::on_channelExited(const Channel *channel, const User *user) const {
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug() << "PluginManager: User" << user->qsName <<  "left channel" << channel->qsName << "- ID:" << channel->iId;
+#endif
+
+	const MumbleConnection_t connectionID = g.sh->getConnectionID();
+
+	this->foreachPlugin([user, channel, connectionID](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onChannelExited(connectionID, user->iId, channel->iId);
+		}
+	});
+}
+
+QString getTalkingStateStr(Settings::TalkState ts) {
+	switch(ts) {
+		case Settings::TalkState::Passive:
+			return QString::fromUtf8("Passive");
+		case Settings::TalkState::Talking:
+			return QString::fromUtf8("Talking");
+		case Settings::TalkState::Whispering:
+			return QString::fromUtf8("Whispering");
+		case Settings::TalkState::Shouting:
+			return QString::fromUtf8("Shouting");
+	}
+
+	return QString::fromUtf8("Unknown");
+}
+
+void PluginManager::on_userTalkingStateChanged() const {
+	const ClientUser *user = qobject_cast<ClientUser*>(QObject::sender());
+#ifdef MUMBLE_PLUGIN_DEBUG
+	if (user) {
+		qDebug() << "PluginManager: User" << user->qsName << "changed talking state to" << getTalkingStateStr(user->tsState);
+	} else {
+		qCritical() << "PluginManager: Unable to identify ClientUser";
+	}
+#endif
+
+	if (user) {
+		// Convert Mumble's talking state to the TalkingState used in the API
+		TalkingState_t ts;
+
+		switch(user->tsState) {
+			case Settings::TalkState::Passive:
+				ts = PASSIVE;
+				break;
+			case Settings::TalkState::Talking:
+				ts = TALKING;
+				break;
+			case Settings::TalkState::Whispering:
+				ts = WHISPERING;
+				break;
+			case Settings::TalkState::Shouting:
+				ts = SHOUTING;
+				break;
+			default:
+				ts = INVALID;
+		}
+
+		if (ts == INVALID) {
+			// An error occured
+			return;
+		}
+
+		const MumbleConnection_t connectionID = g.sh->getConnectionID();
+
+		foreachPlugin([user, ts, connectionID](Plugin& plugin) {
+			if (plugin.isLoaded()) {
+				plugin.onUserTalkingStateChanged(connectionID, user->iId, ts);
+			}
+		});
+	}
 }

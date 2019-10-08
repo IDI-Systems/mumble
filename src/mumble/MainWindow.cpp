@@ -838,6 +838,9 @@ static void recreateServerHandler() {
 	g.mw->connect(sh.get(), SIGNAL(connected()), g.mw, SLOT(serverConnected()));
 	g.mw->connect(sh.get(), SIGNAL(disconnected(QAbstractSocket::SocketError, QString)), g.mw, SLOT(serverDisconnected(QAbstractSocket::SocketError, QString)));
 	g.mw->connect(sh.get(), SIGNAL(error(QAbstractSocket::SocketError, QString)), g.mw, SLOT(resolverError(QAbstractSocket::SocketError, QString)));
+
+	g.pluginManager->connect(sh.get(), SIGNAL(connected()), g.pluginManager, SLOT(on_serverConnected()));
+	g.pluginManager->connect(sh.get(), SIGNAL(disconnected(QAbstractSocket::SocketError, QString)), g.pluginManager, SLOT(on_serverDisconnected()));
 }
 
 void MainWindow::openUrl(const QUrl &url) {

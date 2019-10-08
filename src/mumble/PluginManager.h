@@ -17,6 +17,13 @@
 #include "MumbleApplication.h"
 #include "PositionalData.h"
 
+#include "User.h"
+#include "ClientUser.h"
+#include "Channel.h"
+#include "Settings.h"
+
+#include <functional>
+
 // Check whether the macro g has been defined before including Global.h
 #ifdef g
 	#define G_WAS_ALREADY_DEFINED
@@ -72,6 +79,8 @@ class PluginManager : public QObject {
 
 		void clearPlugins();
 		bool selectActivePositionalDataPlugin();
+
+		void foreachPlugin(std::function<void(Plugin&)>) const;
 	public:
 		PluginManager(QString sysPath = PLUGIN_SYS_PATH, QString userPath = PLUGIN_USER_PATH, QObject *p = NULL);
 		virtual ~PluginManager() Q_DECL_OVERRIDE;
@@ -85,10 +94,15 @@ class PluginManager : public QObject {
 		void enablePositionalDataFor(uint32_t pluginID, bool enable = true) const;
 		const QVector<QSharedPointer<const Plugin> > getPlugins(bool sorted = false) const;
 
-		// functions for accessing the PA context. The context itself is not publicly exposed in order to guarantee
-		// that it is only accessed while holding a lock for it
 	public slots:
 		void rescanPlugins();
+
+	protected slots:
+		void on_serverConnected() const;
+		void on_serverDisconnected() const;
+		void on_channelEntered(const Channel *channel, const User *user) const;
+		void on_channelExited(const Channel *channel, const User *user) const;
+		void on_userTalkingStateChanged() const;
 };
 
 #endif
