@@ -60,6 +60,9 @@ class ServerHandler : public QThread {
 		Q_DISABLE_COPY(ServerHandler)
 
 		Database *database;
+
+		static QMutex nextConnectionIDMutex;
+		static int nextConnectionID;
 	protected:
 		QString qsHostName;
 		QString qsUserName;
@@ -68,6 +71,7 @@ class ServerHandler : public QThread {
 		unsigned short usResolvedPort;
 		bool bUdp;
 		bool bStrong;
+		int connectionID;
 
 #ifdef Q_OS_WIN
 		HANDLE hQoS;
@@ -107,6 +111,7 @@ class ServerHandler : public QThread {
 		void getConnectionInfo(QString &host, unsigned short &port, QString &username, QString &pw) const;
 		bool isStrong() const;
 		void customEvent(QEvent *evt) Q_DECL_OVERRIDE;
+		int getConnectionID() const;
 
 		void sendProtoMessage(const ::google::protobuf::Message &msg, unsigned int msgType);
 		void sendMessage(const char *data, int len, bool force = false);
