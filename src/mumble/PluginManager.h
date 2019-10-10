@@ -103,6 +103,10 @@ class PluginManager : public QObject {
 		void on_channelEntered(const Channel *channel, const User *user) const;
 		void on_channelExited(const Channel *channel, const User *user) const;
 		void on_userTalkingStateChanged() const;
+		void on_audioInput(short *inputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech) const;
+		void on_audioSourceFetched(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech, const ClientUser *user) const;
+		void on_audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount) const;
+		void on_receiveData(const ClientUser *sender, const char *data, size_t dataLength, const char *dataID) const;
 };
 
 #endif

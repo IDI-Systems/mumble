@@ -10,6 +10,7 @@
 #include "CELTCodec.h"
 #include "OpusCodec.h"
 #include "PacketDataStream.h"
+#include "PluginManager.h"
 
 // We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
 #include "Global.h"
@@ -278,6 +279,15 @@ void Audio::stopInput() {
 void Audio::start(const QString &input, const QString &output) {
 	startInput(input);
 	startOutput(output);
+	
+	// Now that the audio input and output is created, we connect them to the PluginManager
+	// As these callbacks might want to change the audio before it gets further processed, all these connections have to be direct
+	QObject::connect(g.ai.get(), SIGNAL(audioInputEncountered(short*, unsigned int, unsigned int, bool)), g.pluginManager,
+			SLOT(on_audioInput(short*, unsigned int, unsigned int, bool)), Qt::DirectConnection);
+	QObject::connect(g.ao.get(), SIGNAL(audioSourceFetched(float*, unsigned int, unsigned int, bool, const ClientUser*)), g.pluginManager,
+			SLOT(on_audioSourceFetched(float*, unsigned int, unsigned int, bool, const ClientUser*)), Qt::DirectConnection);
+	QObject::connect(g.ao.get(), SIGNAL(audioOutputAboutToPlay(float*, unsigned int, unsigned int)), g.pluginManager,
+			SLOT(on_audioOutputAboutToPlay(float*, unsigned int, unsigned int)), Qt::DirectConnection);
 }
 
 void Audio::stop() {

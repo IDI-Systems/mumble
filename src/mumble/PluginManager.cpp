@@ -450,3 +450,54 @@ void PluginManager::on_userTalkingStateChanged() const {
 		});
 	}
 }
+
+void PluginManager::on_audioInput(short *inputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech) const {
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug() << "PluginManager: AudioInput with" << channelCount << "channels and" << sampleCount << "samples per channel. IsSpeech:" << isSpeech;
+#endif
+
+	this->foreachPlugin([inputPCM, sampleCount, channelCount, isSpeech](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onAudioInput(inputPCM, sampleCount, channelCount, isSpeech);
+		}
+	});
+}
+
+void PluginManager::on_audioSourceFetched(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech, const ClientUser *user) const {
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug() << "PluginManager: AudioSource with" << channelCount << "channels and" << sampleCount << "samples per channel fetched. IsSpeech:" << isSpeech
+		<< "Sender-ID:" << user->uiSession;
+#endif
+
+	this->foreachPlugin([outputPCM, sampleCount, channelCount, isSpeech, user](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onAudioSourceFetched(outputPCM, sampleCount, channelCount, isSpeech, user ? user->uiSession : -1);
+		}
+	});
+}
+
+void PluginManager::on_audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount) const {
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug() << "PluginManager: AudioOutput with" << channelCount << "channels and" << sampleCount << "samples per channel";
+#endif
+
+	this->foreachPlugin([outputPCM, sampleCount, channelCount](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onAudioOutputAboutToPlay(outputPCM, sampleCount, channelCount);
+		}
+	});
+}
+
+void PluginManager::on_receiveData(const ClientUser *sender, const char *data, size_t dataLength, const char *dataID) const {
+#ifdef MUMBLE_PLUGIN_DEBUG
+	qDebug() << "PluginManager: Data with ID" << dataID << "and length" << dataLength << "received. Sender-ID:" << sender->uiSession;
+#endif
+
+	const MumbleConnection_t connectionID = g.sh->getConnectionID();
+
+	this->foreachPlugin([sender, data, dataLength, dataID, connectionID](Plugin& plugin) {
+		if (plugin.isLoaded()) {
+			plugin.onReceiveData(connectionID, sender->uiSession, data, dataLength, dataID);
+		}
+	});
+}
