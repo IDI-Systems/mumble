@@ -112,6 +112,10 @@ class AudioOutput : public QThread {
 		const float *getSpeakerPos(unsigned int &nspeakers);
 		static float calcGain(float dotproduct, float distance);
 		unsigned int getMixerFreq() const;
+
+	signals:
+		void audioSourceFetched(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech, const ClientUser *user);
+		void audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount);
 };
 
 #endif

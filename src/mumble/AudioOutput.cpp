@@ -475,12 +475,13 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 		}
 
 		foreach(AudioOutputUser *aop, qlMix) {
-			const float * RESTRICT pfBuffer = aop->pfBuffer;
+			float * RESTRICT pfBuffer = aop->pfBuffer;
 			float volumeAdjustment = 1;
 
 			AudioOutputSpeech *speech = qobject_cast<AudioOutputSpeech *>(aop);
+			const ClientUser *user = nullptr;
 			if (speech) {
-				const ClientUser *user = speech->p;
+				user = speech->p;
 				volumeAdjustment *= user->fLocalVolume;
 				if (prioritySpeakerActive) {
 					
@@ -490,6 +491,14 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 						volumeAdjustment *= adjustFactor;
 					}
 				}
+			}
+
+			// For now the transmitted audio is always mono -> channelCount = 1
+			// As the events may casue the output PCM to change, the connection has to be direct in any case
+			if (user) {
+				emit audioSourceFetched(pfBuffer, nsamp, 1, true, user);
+			} else {
+				emit audioSourceFetched(pfBuffer, nsamp, 1, false, nullptr);
 			}
 
 			if (recorder) {
@@ -564,6 +573,8 @@ bool AudioOutput::mix(void *outbuff, unsigned int nsamp) {
 		if (recorder && recorder->isInMixDownMode()) {
 			recorder->addBuffer(NULL, recbuff, nsamp);
 		}
+
+		emit audioOutputAboutToPlay(output, nsamp, nchan);
 
 		// Clip
 		if (eSampleFormat == SampleFloat)
