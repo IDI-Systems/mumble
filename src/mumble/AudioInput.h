@@ -147,6 +147,7 @@ class AudioInput : public QThread {
 	signals:
 		void doDeaf();
 		void doMute();
+		void audioInputEncountered(short *inputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech);
 	public:
 		typedef enum { ActivityStateIdle, ActivityStateReturnedFromIdle, ActivityStateActive } ActivityState;
 

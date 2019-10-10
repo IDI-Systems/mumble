@@ -961,6 +961,8 @@ void AudioInput::encodeAudioFrame() {
 
 	EncodingOutputBuffer buffer;
 	Q_ASSERT(buffer.size() >= static_cast<size_t>(iAudioQuality / 100 * iAudioFrames / 8));
+
+	emit audioInputEncountered(psSource, iFrameSize, iMicChannels, bIsSpeech);
 	
 	int len = 0;
 
