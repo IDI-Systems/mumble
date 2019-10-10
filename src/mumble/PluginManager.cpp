@@ -371,7 +371,7 @@ void PluginManager::on_channelEntered(const Channel *channel, const User *user) 
 
 	this->foreachPlugin([user, channel, prevChannel, connectionID](Plugin& plugin) {
 		if (plugin.isLoaded()) {
-			plugin.onChannelEntered(connectionID, user->iId, prevChannel ? prevChannel->iId : -1, channel->iId);
+			plugin.onChannelEntered(connectionID, user->uiSession, prevChannel ? prevChannel->iId : -1, channel->iId);
 		}
 	});
 }
@@ -385,7 +385,7 @@ void PluginManager::on_channelExited(const Channel *channel, const User *user) c
 
 	this->foreachPlugin([user, channel, connectionID](Plugin& plugin) {
 		if (plugin.isLoaded()) {
-			plugin.onChannelExited(connectionID, user->iId, channel->iId);
+			plugin.onChannelExited(connectionID, user->uiSession, channel->iId);
 		}
 	});
 }
@@ -445,7 +445,7 @@ void PluginManager::on_userTalkingStateChanged() const {
 
 		foreachPlugin([user, ts, connectionID](Plugin& plugin) {
 			if (plugin.isLoaded()) {
-				plugin.onUserTalkingStateChanged(connectionID, user->iId, ts);
+				plugin.onUserTalkingStateChanged(connectionID, user->uiSession, ts);
 			}
 		});
 	}
