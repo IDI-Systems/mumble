@@ -98,7 +98,7 @@ void Plugin::resolveFunctionPointers() {
 		this->apiFnc.onAudioInput = reinterpret_cast<bool (PLUGIN_CALLING_CONVENTION *)(short*, uint32_t, uint16_t, bool)>(lib.resolve("onAudioInput"));
 		this->apiFnc.onAudioSourceFetched = reinterpret_cast<bool (PLUGIN_CALLING_CONVENTION *)(float*, uint32_t, uint16_t, bool, MumbleUserID_t)>(lib.resolve("onAudioSourceFetched"));
 		this->apiFnc.onAudioSourceProcessed = reinterpret_cast<bool (PLUGIN_CALLING_CONVENTION *)(float*, uint32_t, uint16_t, bool, MumbleUserID_t)>(lib.resolve("onAudioSourceProcessed"));
-		this->apiFnc.onAudioOutputAboutToPlay = reinterpret_cast<bool (PLUGIN_CALLING_CONVENTION *)(float*, uint32_t, uint16_t, bool)>(lib.resolve("onAudioOutputAboutToPlay"));
+		this->apiFnc.onAudioOutputAboutToPlay = reinterpret_cast<bool (PLUGIN_CALLING_CONVENTION *)(float*, uint32_t, uint16_t)>(lib.resolve("onAudioOutputAboutToPlay"));
 
 		// If positional audio is to be supported, all three corresponding functions have to be implemented
 		// For PA it is all or nothing
@@ -446,11 +446,11 @@ bool Plugin::onAudioSourceProcessed(float *outputPCM, uint32_t sampleCount, uint
 	}
 }
 
-bool Plugin::onAudioOutputAboutToPlay(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech) {
+bool Plugin::onAudioOutputAboutToPlay(float *outputPCM, uint32_t sampleCount, uint16_t channelCount) {
 	PluginReadLocker lock(&this->pluginLock);
 
 	if (this->apiFnc.onAudioOutputAboutToPlay) {
-		return this->apiFnc.onAudioOutputAboutToPlay(outputPCM, sampleCount, channelCount, isSpeech);
+		return this->apiFnc.onAudioOutputAboutToPlay(outputPCM, sampleCount, channelCount);
 	} else {
 		return false;
 	}

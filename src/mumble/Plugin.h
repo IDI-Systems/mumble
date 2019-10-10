@@ -49,7 +49,7 @@ struct PluginAPIFunctions {
 		bool          (PLUGIN_CALLING_CONVENTION *onAudioInput)(short *inputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
 		bool          (PLUGIN_CALLING_CONVENTION *onAudioSourceFetched)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
 		bool          (PLUGIN_CALLING_CONVENTION *onAudioSourceProcessed)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
-		bool          (PLUGIN_CALLING_CONVENTION *onAudioOutputAboutToPlay)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
+		bool          (PLUGIN_CALLING_CONVENTION *onAudioOutputAboutToPlay)(float *outputPCM, uint32_t sampleCount, uint16_t channelCount);
 };
 
 
@@ -283,7 +283,7 @@ class Plugin : public QObject {
 		/// @param outputPCM A pointer to a short array representing the output PCM
 		/// @param sampleCount The amount of samples per channel
 		/// @param channelCount The amount of channels in the PCM
-		/// @param isSpeech Whether Mumble considers the input as speech
+		/// @param isSpeech Whether Mumble considers the output as speech
 		/// @param userID The ID of the user responsible for the output (only relevant if isSpeech == true)
 		/// @returns Whether this pluign has modified the audio
 		virtual bool onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
@@ -292,7 +292,7 @@ class Plugin : public QObject {
 		/// @param outputPCM A pointer to a short array representing the output PCM
 		/// @param sampleCount The amount of samples per channel
 		/// @param channelCount The amount of channels in the PCM
-		/// @param isSpeech Whether Mumble considers the input as speech
+		/// @param isSpeech Whether Mumble considers the output as speech
 		/// @param userID The ID of the user responsible for the output (only relevant if isSpeech == true)
 		/// @returns Whether this pluign has modified the audio
 		virtual bool onAudioSourceProcessed(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech, MumbleUserID_t userID);
@@ -301,9 +301,8 @@ class Plugin : public QObject {
 		/// @param outputPCM A pointer to a short array representing the output PCM
 		/// @param sampleCount The amount of samples per channel
 		/// @param channelCount The amount of channels in the PCM
-		/// @param isSpeech Whether Mumble considers the input as speech
 		/// @returns Whether this pluign has modified the audio
-		virtual bool onAudioOutputAboutToPlay(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, bool isSpeech);
+		virtual bool onAudioOutputAboutToPlay(float *outputPCM, uint32_t sampleCount, uint16_t channelCount);
 
 		/// @returns Whether this plugin provides an about-dialog
 		virtual bool providesAboutDialog() const;
