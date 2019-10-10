@@ -9,8 +9,10 @@
 #include "AudioOutput.h"
 #include "CELTCodec.h"
 #include "OpusCodec.h"
-#include "Global.h"
 #include "PacketDataStream.h"
+
+// We define a global macro called 'g'. This can lead to issues when included code uses 'g' as a type or parameter name (like protobuf 3.7 does). As such, for now, we have to make this our last include.
+#include "Global.h"
 
 class CodecInit : public DeferInit {
 	public:
