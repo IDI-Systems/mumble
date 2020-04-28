@@ -1023,14 +1023,40 @@ void Server::sendMessage(ServerUser *u, const char *data, int len, QByteArray &c
 				sendMessage(pDst, buffer, len - poslen, qba_npos); \
 		}
 
+void doLog(Server *server, ServerUser *u, QString msg) {
+	// Invoke log-function from main thread (this is important because that function
+	// accesses the database which must only be accessed from that thread.
+	// Taken from https://riptutorial.com/qt/example/21783/using-qtimer-to-run-code-on-main-thread
+	QTimer *timer = new QTimer();
+	timer->moveToThread(qApp->thread());
+	timer->setSingleShot(true);
+	QObject::connect(timer, &QTimer::timeout, [=]() {
+		if (u) {
+			server->log(u, msg);
+		} else {
+			server->log(msg);
+		}
+
+		timer->deleteLater();
+	});
+	QMetaObject::invokeMethod(timer, "start", Qt::QueuedConnection, Q_ARG(int, 0));
+}
+
+void doLog(Server *server, QString msg) {
+	doLog(server, nullptr, msg);
+}
+
+
 void Server::processMsg(ServerUser *u, const char *data, int len) {
 	// Note that in this function we never have to aquire a read-lock on qrwlVoiceThread
 	// as all places that call this function will hold that lock at the point of calling
 	// this function.
 	// This function is currently called from Server::msgUDPTunnel, Server::run and
 	// Server::message
-	if (u->sState != ServerUser::Authenticated || u->bMute || u->bSuppress || u->bSelfMute)
+	if (u->sState != ServerUser::Authenticated || u->bMute || u->bSuppress || u->bSelfMute) {
+		doLog(this, u, QLatin1String("AudioDebug: Not authenticated - dropping audio stream!"));
 		return;
+	}
 
 	QByteArray qba, qba_npos;
 	unsigned int counter;
@@ -1049,6 +1075,7 @@ void Server::processMsg(ServerUser *u, const char *data, int len) {
 		const int packetsize = 20 + 8 + 4 + len;
 
 		if (! bw->addFrame(packetsize, iMaxBandwidth / 8)) {
+			doLog(this, QLatin1String("AudioDebug: Dropping suppressed packet"));
 			// Suppress packet.
 			 return;
 		}
@@ -1084,6 +1111,7 @@ void Server::processMsg(ServerUser *u, const char *data, int len) {
 	QSet<ServerUser *> listeningUsers;
 
 	if (target == 0x1f) { // Server loopback
+		doLog(this, QLatin1String("AudioDebug: Server loopback"));
 		buffer[0] = static_cast<char>(type | SpeechFlags::Normal);
 		sendMessage(u, buffer, len, qba);
 		return;
@@ -1092,11 +1120,15 @@ void Server::processMsg(ServerUser *u, const char *data, int len) {
 
 		buffer[0] = static_cast<char>(type | SpeechFlags::Normal);
 
+		QString names;
 		// Send audio to all users in the same channel
 		foreach(User *p, c->qlUsers) {
+			names += QString::fromLatin1("\"%1\", ").arg(p->qsName);
 			ServerUser *pDst = static_cast<ServerUser *>(p);
 			SENDTO;
 		}
+
+		doLog(this, QString::fromLatin1("AudioDebug: Sent audio of \"%1\" to %2").arg(u->qsName).arg(names));
 
 		// Send audio to all users that are listening to the channel
 		foreach(unsigned int currentSession, ChannelListener::getListenersForChannel(c)) {
