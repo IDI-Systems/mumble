@@ -1023,7 +1023,21 @@ void Server::sendMessage(ServerUser *u, const char *data, int len, QByteArray &c
 				sendMessage(pDst, buffer, len - poslen, qba_npos); \
 		}
 
-void doLog(Server *server, ServerUser *u, QString msg) {
+void doLog(Server *server, QString msg) {
+	static QStringList msgList;
+	
+	msgList << msg;
+
+	if (msgList.size() < 100) {
+		return;
+	}
+
+	QString gatheredMessages;
+	foreach(QString current, msgList) {
+		gatheredMessages += current + QLatin1String("\n");
+	}
+	msgList.clear();
+	
 	// Invoke log-function from main thread (this is important because that function
 	// accesses the database which must only be accessed from that thread.
 	// Taken from https://riptutorial.com/qt/example/21783/using-qtimer-to-run-code-on-main-thread
@@ -1031,19 +1045,11 @@ void doLog(Server *server, ServerUser *u, QString msg) {
 	timer->moveToThread(qApp->thread());
 	timer->setSingleShot(true);
 	QObject::connect(timer, &QTimer::timeout, [=]() {
-		if (u) {
-			server->log(u, msg);
-		} else {
-			server->log(msg);
-		}
+		server->log(gatheredMessages);
 
 		timer->deleteLater();
 	});
 	QMetaObject::invokeMethod(timer, "start", Qt::QueuedConnection, Q_ARG(int, 0));
-}
-
-void doLog(Server *server, QString msg) {
-	doLog(server, nullptr, msg);
 }
 
 
@@ -1054,7 +1060,7 @@ void Server::processMsg(ServerUser *u, const char *data, int len) {
 	// This function is currently called from Server::msgUDPTunnel, Server::run and
 	// Server::message
 	if (u->sState != ServerUser::Authenticated || u->bMute || u->bSuppress || u->bSelfMute) {
-		doLog(this, u, QLatin1String("AudioDebug: Not authenticated - dropping audio stream!"));
+		doLog(this, QLatin1String("AudioDebug: Not authenticated - dropping audio stream!"));
 		return;
 	}
 
