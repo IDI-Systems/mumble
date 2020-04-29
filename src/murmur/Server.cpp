@@ -1060,7 +1060,15 @@ void Server::processMsg(ServerUser *u, const char *data, int len) {
 	// This function is currently called from Server::msgUDPTunnel, Server::run and
 	// Server::message
 	if (u->sState != ServerUser::Authenticated || u->bMute || u->bSuppress || u->bSelfMute) {
-		doLog(this, QLatin1String("AudioDebug: Not authenticated - dropping audio stream!"));
+		if (u->sState != ServerUser::Authenticated) {
+			doLog(this, QString::fromLatin1("AudioDebug: \"%1\" not authenticated - dropping audio stream!").arg(u->qsName));
+		} else if (u->bMute) {
+			doLog(this, QString::fromLatin1("AudioDebug: \"%1\" server-muted - dropping audio stream!").arg(u->qsName));
+		} else if (u->bSuppress) {
+			doLog(this, QString::fromLatin1("AudioDebug: \"%1\" suppressed - dropping audio stream!").arg(u->qsName));
+		} else if (u->bSelfMute) {
+			doLog(this, QString::fromLatin1("AudioDebug: \"%1\" self-muted - dropping audio stream!").arg(u->qsName));
+		}
 		return;
 	}
 
