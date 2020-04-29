@@ -1089,7 +1089,7 @@ void Server::processMsg(ServerUser *u, const char *data, int len) {
 		const int packetsize = 20 + 8 + 4 + len;
 
 		if (! bw->addFrame(packetsize, iMaxBandwidth / 8)) {
-			doLog(this, QLatin1String("AudioDebug: Dropping suppressed packet"));
+			doLog(this, QString::fromLatin1("AudioDebug: Dropping packet from \"%1\" (too large - is: %2 allowed: %3)").arg(u->qsName).arg(packetsize).arg(iMaxBandwidth / 8));
 			// Suppress packet.
 			 return;
 		}
