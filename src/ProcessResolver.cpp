@@ -122,7 +122,7 @@ void addName(const char *stackName, QVector<const char*>& destVec) {
 			}
 #ifndef QT_NO_DEBUG
 			 else {
-				qQWarning("ProcessResolver: utf16ToUtf8() failed, skipping entry...");
+				qWarning("ProcessResolver: utf16ToUtf8() failed, skipping entry...");
 			}
 #endif
 

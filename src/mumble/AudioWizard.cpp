@@ -521,7 +521,7 @@ void AudioWizard::on_Ticker_timeout() {
 			// qgsScene->addLine(QLineF(0,-1,0,1), pen);
 			// qgsScene->addLine(QLineF(-1,0,1,0), pen);
 
-			const float speakerScale = 0.9;
+			const float speakerScale = 0.9f;
 			const float speakerRadius = baseRadius * speakerScale;
 
 			// nspeaker is in format [x1,y1,z1, x2,y2,z2, ...]
@@ -546,7 +546,7 @@ void AudioWizard::on_Ticker_timeout() {
 				}
 			}
 
-			const float sourceScale = 0.9;
+			const float sourceScale = 0.9f;
 			const float sourceRadius = baseRadius * sourceScale;
 
 			qgiSource = qgsScene->addEllipse(QRectF(-sourceRadius, -sourceRadius, 2 * sourceRadius, 2 * sourceRadius), pen, QBrush(bluishGreenColor));
