@@ -23,7 +23,7 @@
 /// A struct for holding the function pointers to the functions inside the plugin's library
 /// For the documentation of those functions, see the plugin's header file (the one used when developing a plugin)
 struct PluginAPIFunctions {
-		mumble_error_t (PLUGIN_CALLING_CONVENTION *init)();
+		mumble_error_t (PLUGIN_CALLING_CONVENTION *init)(mumble_connection_t connection);
 		void          (PLUGIN_CALLING_CONVENTION *shutdown)();
 		const char*   (PLUGIN_CALLING_CONVENTION *getName)();
 		version_t     (PLUGIN_CALLING_CONVENTION *getAPIVersion)();
@@ -176,7 +176,7 @@ class Plugin : public QObject {
 
 
 		/// Initializes this plugin
-		virtual mumble_error_t init();
+		virtual mumble_error_t init(mumble_connection_t connection);
 		/// Shuts this plugin down
 		virtual void shutdown();
 		/// Delegates the struct of API function pointers to the plugin backend

@@ -419,19 +419,18 @@ bool AudioOutput::mix(void *outbuff, unsigned int frameCount) {
 		prioritySpeakerActive = true;
 	}
 
+	// If the audio backend uses a float-array we can sample and mix the audio sources directly into the output. Otherwise we'll have to
+	// use an intermediate buffer which we will convert to an array of shorts later
+	STACKVAR(float, fOutput, iChannels * frameCount);
+	float *output = (eSampleFormat == SampleFloat) ? reinterpret_cast<float *>(outbuff) : fOutput;
+	memset(output, 0, sizeof(float) * frameCount * iChannels);
+
 	if (! qlMix.isEmpty()) {
 		// There are audio sources available -> mix those sources together and feed them into the audio backend
 		STACKVAR(float, speaker, iChannels*3);
 		STACKVAR(float, svol, iChannels);
 
-		STACKVAR(float, fOutput, iChannels * frameCount);
-
-		// If the audio backend uses a float-array we can sample and mix the audio sources directly into the output. Otherwise we'll have to
-		// use an intermediate buffer which we will convert to an array of shorts later
-		float *output = (eSampleFormat == SampleFloat) ? reinterpret_cast<float *>(outbuff) : fOutput;
 		bool validListener = false;
-
-		memset(output, 0, sizeof(float) * frameCount * iChannels);
 
 		// Initialize recorder if recording is enabled
 		boost::shared_array<float> recbuff;
@@ -644,9 +643,12 @@ bool AudioOutput::mix(void *outbuff, unsigned int frameCount) {
 		if (recorder && recorder->isInMixDownMode()) {
 			recorder->addBuffer(nullptr, recbuff, frameCount);
 		}
+	}
 
-		emit audioOutputAboutToPlay(output, frameCount, nchan);
+	bool hasOutput = false;
+	emit audioOutputAboutToPlay(output, frameCount, nchan, &hasOutput);
 
+	if (hasOutput || (! qlMix.isEmpty())) {
 		// Clip the output audio
 		if (eSampleFormat == SampleFloat)
 			for (unsigned int i=0;i<frameCount*iChannels;i++)
@@ -664,7 +666,7 @@ bool AudioOutput::mix(void *outbuff, unsigned int frameCount) {
 		removeBuffer(aop);
 	
 	// Return whether data has been written to the outbuff
-	return (! qlMix.isEmpty());
+	return (hasOutput || (! qlMix.isEmpty()));
 }
 
 bool AudioOutput::isAlive() const {

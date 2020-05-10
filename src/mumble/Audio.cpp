@@ -276,8 +276,8 @@ void Audio::start(const QString &input, const QString &output) {
 			SLOT(on_audioInput(short*, unsigned int, unsigned int, bool)), Qt::DirectConnection);
 	QObject::connect(g.ao.get(), SIGNAL(audioSourceFetched(float*, unsigned int, unsigned int, bool, const ClientUser*)), g.pluginManager,
 			SLOT(on_audioSourceFetched(float*, unsigned int, unsigned int, bool, const ClientUser*)), Qt::DirectConnection);
-	QObject::connect(g.ao.get(), SIGNAL(audioOutputAboutToPlay(float*, unsigned int, unsigned int)), g.pluginManager,
-			SLOT(on_audioOutputAboutToPlay(float*, unsigned int, unsigned int)), Qt::DirectConnection);
+	QObject::connect(g.ao.get(), SIGNAL(audioOutputAboutToPlay(float*, unsigned int, unsigned int, bool*)), g.pluginManager,
+			SLOT(on_audioOutputAboutToPlay(float*, unsigned int, unsigned int, bool*)), Qt::DirectConnection);
 }
 
 void Audio::stop() {

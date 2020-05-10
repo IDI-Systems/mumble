@@ -499,7 +499,12 @@ bool PluginManager::loadPlugin(plugin_id_t pluginID) const {
 			return true;
 		}
 
-		if (plugin->init() == STATUS_OK) {
+		mumble_connection_t connectionID = -1;
+		if (g.sh != nullptr) {
+			connectionID = g.sh->getConnectionID();
+		}
+
+		if (plugin->init(connectionID) == STATUS_OK) {
 			try {
 				MumbleAPI api = API::getMumbleAPI(plugin->getAPIVersion());
 
@@ -723,14 +728,15 @@ void PluginManager::on_audioSourceFetched(float *outputPCM, unsigned int sampleC
 	});
 }
 
-void PluginManager::on_audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount) const {
+void PluginManager::on_audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool *modifiedAudio) const {
 #ifdef MUMBLE_PLUGIN_DEBUG
 	qDebug() << "PluginManager: AudioOutput with" << channelCount << "channels and" << sampleCount << "samples per channel";
 #endif
-
-	foreachPlugin([outputPCM, sampleCount, channelCount](Plugin& plugin) {
+	foreachPlugin([outputPCM, sampleCount, channelCount, modifiedAudio](Plugin& plugin) {
 		if (plugin.isLoaded()) {
-			plugin.onAudioOutputAboutToPlay(outputPCM, sampleCount, channelCount);
+			if(plugin.onAudioOutputAboutToPlay(outputPCM, sampleCount, channelCount)) {
+				*modifiedAudio = true;
+			}
 		}
 	});
 }

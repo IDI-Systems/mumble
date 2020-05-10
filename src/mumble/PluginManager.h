@@ -238,7 +238,7 @@ class PluginManager : public QObject {
 		/// @param outputPCM The array containing the output-PCM (pulse-code-modulation). Its length is sampleCount * channelCount
 		/// @param sampleCount The amount of samples in the PCM array
 		/// @param channelCount The amount of channels in the PCM array
-		void on_audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount) const;
+		void on_audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool *modifiedAudio) const;
 		/// Slot that gets called after the local client has finished synchronizing with the server. It will delegate it to the respective
 		/// plugin callback.
 		void on_serverSynchronized() const;

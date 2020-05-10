@@ -77,7 +77,7 @@ void Plugin::resolveFunctionPointers() {
 		// the missing ones
 		
 		// resolve the mandatory functions first
-		m_apiFnc.init = reinterpret_cast<mumble_error_t (PLUGIN_CALLING_CONVENTION *)()>(m_lib.resolve("mumble_init"));
+		m_apiFnc.init = reinterpret_cast<mumble_error_t (PLUGIN_CALLING_CONVENTION *)(mumble_connection_t)>(m_lib.resolve("mumble_init"));
 		m_apiFnc.shutdown = reinterpret_cast<void (PLUGIN_CALLING_CONVENTION *)()>(m_lib.resolve("mumble_shutdown"));
 		m_apiFnc.getName = reinterpret_cast<const char* (PLUGIN_CALLING_CONVENTION *)()>(m_lib.resolve("mumble_getName"));
 		m_apiFnc.getAPIVersion = reinterpret_cast<version_t (PLUGIN_CALLING_CONVENTION *)()>(m_lib.resolve("mumble_getAPIVersion"));
@@ -240,7 +240,7 @@ bool Plugin::isKeyboardMonitoringAllowed() const {
 	return m_mayMonitorKeyboard;
 }
 
-mumble_error_t Plugin::init() {
+mumble_error_t Plugin::init(mumble_connection_t connection) {
 	QWriteLocker lock(&m_pluginLock);
 
 	if (m_pluginIsLoaded) {
@@ -258,7 +258,7 @@ mumble_error_t Plugin::init() {
 
 	mumble_error_t retStatus;
 	if (m_apiFnc.init) {
-		retStatus = m_apiFnc.init();
+		retStatus = m_apiFnc.init(connection);
 	} else {
 		// If there's no such function nothing can go wrong because nothing was called
 		retStatus = STATUS_OK;

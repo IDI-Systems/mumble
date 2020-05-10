@@ -44,8 +44,11 @@ plugin_id_t ownID;
 //////////////////////////////////////////////////////////////
 // All of the following function must be implemented in order for Mumble to load the plugin
 
-mumble_error_t mumble_init() {
+mumble_error_t mumble_init(mumble_connection_t connection) {
 	pluginLog("Initialized plugin");
+
+	// Print the connection ID at initialization. If not connected to a server it should be -1.
+	pLog() << "Connection ID at initialization: " << connection << std::endl;
 
 	// STATUS_OK is a macro set to the appropriate status flag (ErrorCode)
 	// If you need to return any other status have a look at the ErrorCode enum

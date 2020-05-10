@@ -130,7 +130,8 @@ class AudioOutput : public QThread {
 		/// @param outputPCM The output PCM that is to be played
 		/// @param sampleCount The amount of samples in the output
 		/// @param channelCount The amount of channels in the output
-		void audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount);
+		/// @param modifiedAudio Pointer to bool if audio has been modified or not and should be played
+		void audioOutputAboutToPlay(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool *modifiedAudio);
 };
 
 #endif

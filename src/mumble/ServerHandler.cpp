@@ -60,7 +60,7 @@
 #include "Global.h"
 
 // Init ServerHandler::nextConnectionID
-int ServerHandler::nextConnectionID = 0;
+int ServerHandler::nextConnectionID = -1;
 QMutex ServerHandler::nextConnectionIDMutex(QMutex::Recursive);
 
 ServerHandlerMessageEvent::ServerHandlerMessageEvent(const QByteArray &msg, unsigned int mtype, bool flush) : QEvent(static_cast<QEvent::Type>(SERVERSEND_EVENT)) {
@@ -118,8 +118,8 @@ ServerHandler::ServerHandler()
 	// assign connection ID
 	{
 		QMutexLocker lock(&nextConnectionIDMutex);
-		connectionID = nextConnectionID;
 		nextConnectionID++;
+		connectionID = nextConnectionID;
 	}
 
 	// Historically, the qWarning line below initialized OpenSSL for us.
