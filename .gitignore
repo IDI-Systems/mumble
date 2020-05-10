@@ -43,5 +43,6 @@ doxygen/
 .qmake.stash
 .DS_Store
 .directory
+.vscode
 tags
 compile_commands.json
