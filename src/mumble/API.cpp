@@ -287,7 +287,7 @@ namespace API {
 
 		int index = 0;
 		foreach(const User *currentUser, channel->qlUsers) {
-			userIDs[index] = currentUser->iId;
+			userIDs[index] = currentUser->uiSession;
 
 			index++;
 		}
