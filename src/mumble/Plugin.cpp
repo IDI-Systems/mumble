@@ -18,13 +18,13 @@ QMutex Plugin::s_idLock(QMutex::Recursive);
 
 void assertPluginLoaded(const Plugin* plugin) {
 	// don't throw and exception in release build
-#ifdef QT_DEBUG
 	if (!plugin->isLoaded()) {
+#ifdef QT_DEBUG
 		throw std::runtime_error("Attempting to access plugin but it is not loaded!");
-	}
 #else
-	qWarning("Plugin assertion failed: Assumed plugin with ID %d to be loaded but it wasn't!", plugin->getID());
+		qWarning("Plugin assertion failed: Assumed plugin with ID %d to be loaded but it wasn't!", plugin->getID());
 #endif
+	}
 }
 
 Plugin::Plugin(QString path, bool isBuiltIn, QObject *p)
