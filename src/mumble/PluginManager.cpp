@@ -715,10 +715,12 @@ void PluginManager::on_audioInput(short *inputPCM, unsigned int sampleCount, uns
 	});
 }
 
-void PluginManager::on_audioSourceFetched(float *outputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech, const ClientUser *user) const {
+void PluginManager::on_audioSourceFetched(float* outputPCM, unsigned int sampleCount, unsigned int channelCount, bool isSpeech, const ClientUser* user) const {
 #ifdef MUMBLE_PLUGIN_DEBUG
-	qDebug() << "PluginManager: AudioSource with" << channelCount << "channels and" << sampleCount << "samples per channel fetched. IsSpeech:" << isSpeech
-		<< "Sender-ID:" << user->uiSession;
+	qDebug() << "PluginManager: AudioSource with" << channelCount << "channels and" << sampleCount << "samples per channel fetched. IsSpeech:" << isSpeech;
+	if (user != nullptr) {
+		qDebug() << "Sender-ID:" << user->uiSession;
+	}
 #endif
 
 	foreachPlugin([outputPCM, sampleCount, channelCount, isSpeech, user](Plugin& plugin) {
