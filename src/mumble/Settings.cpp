@@ -14,6 +14,8 @@
 
 #include <QtCore/QProcessEnvironment>
 #include <QtCore/QStandardPaths>
+#include <QtCore/QFileInfo>
+#include <QtCore/QRegularExpression>
 #include <QtGui/QImageReader>
 #include <QtWidgets/QSystemTrayIcon>
 
@@ -920,12 +922,26 @@ void Settings::load(QSettings* settings_ptr) {
 
 	// Plugins
 	settings_ptr->beginGroup(QLatin1String("plugins"));
-	foreach(const QString &savePath, settings_ptr->childKeys()) {
-		// Path separators have been converted to NULL-chars
-		QString pluginPath = savePath;
-		pluginPath.replace(QChar::Null, QDir::separator());
+	foreach(const QString &pluginKey, settings_ptr->childGroups()) {
+		QString pluginHash;
 
-		qhPluginSettings.insert(pluginPath, settings_ptr->value(savePath).value<PluginSetting>());
+		if (pluginKey.contains(QLatin1String("_"))) {
+			// The key contains the filename as well as the hash
+			int index = pluginKey.lastIndexOf(QLatin1String("_"));
+			pluginHash = pluginKey.right(pluginKey.size() - index - 1);
+		} else {
+			pluginHash = pluginKey;
+		}
+
+		qDebug() << "Hash:" << pluginHash;
+
+		PluginSetting pluginSettings;
+		pluginSettings.path = settings_ptr->value(pluginKey + QLatin1String("/path")).toString();
+		pluginSettings.allowKeyboardMonitoring = settings_ptr->value(pluginKey + QLatin1String("/allowKeyboardMonitoring")).toBool();
+		pluginSettings.enabled = settings_ptr->value(pluginKey + QLatin1String("/enabled")).toBool();
+		pluginSettings.positionalDataEnabled = settings_ptr->value(pluginKey + QLatin1String("/positionalDataEnabled")).toBool();
+
+		qhPluginSettings.insert(pluginHash, pluginSettings);
 	}
 	settings_ptr->endGroup();
 
@@ -1279,15 +1295,32 @@ void Settings::save() {
 	settings_ptr->endGroup();
 	
 	// Plugins
-	settings_ptr->beginGroup(QLatin1String("plugins"));
-	foreach(const QString &pluginPath, qhPluginSettings.keys()) {
-		// replace slashes with NULL-chars in order to not confuse the settings system with additional slashes
-		QString savePath = pluginPath;
-		savePath.replace(QDir::separator(), QChar::Null);
+	foreach(const QString &pluginHash, qhPluginSettings.keys()) {
+		QString savePath = QString::fromLatin1("plugins/");
+		const PluginSetting settings = qhPluginSettings.value(pluginHash);
+		const QFileInfo info(settings.path);
+		QString baseName = info.baseName(); // Get the filename without file extensions
+		const bool containsNonASCII = baseName.contains(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{007F}]")));
 
-		settings_ptr->setValue(savePath, QVariant::fromValue(qhPluginSettings.value(pluginPath)));
+		if (containsNonASCII || baseName.isEmpty()) {
+			savePath += pluginHash;
+		} else {
+			// Make sure there are no spaces in the name
+			baseName.replace(QLatin1Char(' '), QLatin1Char('_'));
+
+			// Also include the plugin's filename in the savepath in order
+			// to allow for easier identification
+			savePath += baseName + QLatin1String("__") + pluginHash;
+		}
+
+		settings_ptr->beginGroup(savePath);
+		settings_ptr->setValue(QLatin1String("path"), settings.path);
+		settings_ptr->setValue(QLatin1String("enabled"), settings.enabled);
+		settings_ptr->setValue(QLatin1String("positionalDataEnabled"), settings.positionalDataEnabled);
+		settings_ptr->setValue(QLatin1String("allowKeyboardMonitoring"), settings.allowKeyboardMonitoring);
+		settings_ptr->endGroup();
 	}
-	settings_ptr->endGroup();
+	
 
 	settings_ptr->beginGroup(QLatin1String("overlay"));
 	os.save(settings_ptr);

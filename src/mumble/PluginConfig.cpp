@@ -107,7 +107,8 @@ void PluginConfig::save() const {
 				g.pluginManager->unloadPlugin(plugin->getID());
 			}
 
-			s.qhPluginSettings.insert(plugin->getFilePath(), { enable, positionalDataEnabled, keyboardMonitoringEnabled });
+			QString pluginKey = QLatin1String(QCryptographicHash::hash(plugin->getFilePath().toUtf8(), QCryptographicHash::Sha1).toHex());
+			s.qhPluginSettings.insert(pluginKey, { plugin->getFilePath(), enable, positionalDataEnabled, keyboardMonitoringEnabled });
 		}
 	}
 }

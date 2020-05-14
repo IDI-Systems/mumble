@@ -58,6 +58,7 @@ QDataStream &operator>>(QDataStream &, ShortcutTarget &);
 Q_DECLARE_METATYPE(ShortcutTarget)
 
 struct PluginSetting {
+	QString path;
 	bool enabled;
 	bool positionalDataEnabled;
 	bool allowKeyboardMonitoring;
@@ -257,6 +258,8 @@ struct Settings {
 	bool bPositionalAudio;
 	bool bPositionalHeadphone;
 	float fAudioMinDistance, fAudioMaxDistance, fAudioMaxDistVolume, fAudioBloom;
+	/// Contains the settings for each individual plugin. The key in this map is the Hex-representated SHA-1
+	/// hash of the plugin's UTF-8 encoded absolute file-path on the hard-drive.
 	QHash<QString, PluginSetting> qhPluginSettings;
 
 	OverlaySettings os;

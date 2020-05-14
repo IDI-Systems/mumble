@@ -307,15 +307,15 @@ void PluginManager::rescanPlugins() {
 	QHash<QString, PluginSetting>::const_iterator it = g.s.qhPluginSettings.constBegin();
 	while (it != g.s.qhPluginSettings.constEnd()) {
 		// for this we need a way to get a plugin based on the filepath
-		const QString pluginPath = it.key();
+		const QString pluginKey = it.key();
 		const PluginSetting setting = it.value();
 
 		// iterate over all loaded plugins to see if the current setting is applicable
 		QHash<plugin_id_t, plugin_ptr_t>::iterator pluginIt = m_pluginHashMap.begin();
 		while (pluginIt != m_pluginHashMap.end()) {
 			plugin_ptr_t plugin = pluginIt.value();
-
-			if (plugin->getFilePath() == pluginPath) {
+			QString pluginHash = QLatin1String(QCryptographicHash::hash(plugin->getFilePath().toUtf8(), QCryptographicHash::Sha1).toHex());
+			if (pluginKey == pluginHash) {
 				if (setting.enabled) {
 					loadPlugin(plugin->getID());
 
